@@ -288,7 +288,8 @@ namespace ButterflyCursor
         readonly List<double> shakeTimes = new List<double>();
         // dancing to music
         readonly AudioMeter audio = new AudioMeter();
-        float level, levelAvg, beat;
+        float level, levelAvg, beat, lastPeak;
+        double lastPeakRead;
         double lastBeat;
         // what the extra effects add to the drawing
         float funLift, spinDeg, pulse = 1f;
@@ -783,7 +784,9 @@ namespace ButterflyCursor
             if (scaredT > 0) scaredT = Math.Max(0, scaredT - dt);
 
             // music: follow the speaker level, a "beat" is a jump well above the recent average
-            float peak = Cfg.Music && visible ? audio.Peak(now) : 0f;
+            // the meter is read 20 times a second, not every frame: plenty for dancing, lighter on the audio service
+            if (now - lastPeakRead > 0.05) { lastPeakRead = now; lastPeak = Cfg.Music && visible ? audio.Peak(now) : 0f; }
+            float peak = lastPeak;
             level += (peak - level) * Math.Min(1f, dt * 12f);
             levelAvg += (peak - levelAvg) * Math.Min(1f, dt * 1.5f);
             if (peak > 0.06f && peak > levelAvg * 1.45f && now - lastBeat > 0.28)
