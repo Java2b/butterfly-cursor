@@ -10,3 +10,6 @@ src/butterfly2.png
 Сияющая синяя бабочка на тёмном фоне.png
 
 *.reg
+
+# release files
+dist/
