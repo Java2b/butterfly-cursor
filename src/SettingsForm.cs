@@ -26,18 +26,20 @@ namespace ButterflyCursor
             MinimizeBox = false;
             StartPosition = FormStartPosition.CenterScreen;
             AutoScaleMode = AutoScaleMode.Font;
-            AutoSize = true;
-            AutoSizeMode = AutoSizeMode.GrowAndShrink;
-            Padding = new Padding(14, 8, 14, 12);
+            // the list is long: it scrolls when the window would not fit on the screen
+            scroller.Dock = DockStyle.Fill;
+            scroller.AutoScroll = true;
+            Controls.Add(scroller);
 
             grid.Location = new Point(14, 8);
+            grid.Margin = new Padding(0, 0, 0, 12);
             grid.ColumnCount = 3;
             grid.AutoSize = true;
             grid.AutoSizeMode = AutoSizeMode.GrowAndShrink;
             grid.ColumnStyles.Add(new ColumnStyle(SizeType.AutoSize));
             grid.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 250));
             grid.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 64));
-            Controls.Add(grid);
+            scroller.Controls.Add(grid);
 
             // ----- creature -----
             Header(L.T("Существо"));
@@ -157,6 +159,22 @@ namespace ButterflyCursor
             Row(L.T("Цвет сияния"), auraColor);
             refreshers.Add(delegate { auraColor.BackColor = Color.FromArgb(255, Color.FromArgb(Cfg.AuraRgb)); });
 
+            // ----- fun -----
+            Header(L.T("Развлечения"));
+            Check(L.T("Реакция на клик: искры, кувырок, ниндзя бросает сюрикен"), delegate { return Cfg.ClickFx; }, delegate(bool v) { Cfg.ClickFx = v; });
+            Check(L.T("Сезонные эффекты: снег, листья, сакура, праздники"), delegate { return Cfg.Seasons; }, delegate(bool v) { Cfg.Seasons = v; });
+            Check(L.T("Танцевать под музыку"), delegate { return Cfg.Music; }, delegate(bool v) { Cfg.Music = v; });
+            Check(L.T("Ночное свечение: вечером и ночью светится ярче"), delegate { return Cfg.NightGlow; }, delegate(bool v) { Cfg.NightGlow = v; });
+            var demo = new Button { AutoSize = true, FlatStyle = FlatStyle.System, Margin = new Padding(3, 6, 3, 2) };
+            Action demoText = delegate
+            {
+                demo.Text = Overlay.Current != null && Overlay.Current.Demo ? L.T("■ Остановить демонстрацию") : L.T("▶ Демонстрация для видео");
+            };
+            demo.Click += delegate { if (Overlay.Current != null) Overlay.Current.ToggleDemo(); };
+            if (Overlay.Current != null) Overlay.Current.DemoChanged += delegate { if (!demo.IsDisposed) demoText(); };
+            refreshers.Add(demoText);
+            Wide(demo);
+
             // ----- misc -----
             Header(L.T("Прочее"));
             var langBox = new ComboBox { DropDownStyle = ComboBoxStyle.DropDownList };
@@ -205,10 +223,22 @@ namespace ButterflyCursor
         readonly ComboBox flagBox = new ComboBox();
         Label flagLabel;
 
+        readonly Panel scroller = new Panel();
+
         void UpdateFlagRow()
         {
             bool on = creatureBox.SelectedIndex >= 0 && creatures[creatureBox.SelectedIndex].Id == "flag";
             flagLabel.Visible = flagBox.Visible = on;
+            FitToScreen();
+        }
+
+        void FitToScreen()
+        {
+            Size pref = grid.GetPreferredSize(Size.Empty);
+            int maxH = Screen.FromPoint(Cursor.Position).WorkingArea.Height - 60;
+            int h = Math.Min(pref.Height + 28, maxH);
+            int w = pref.Width + 48 + (pref.Height + 28 > maxH ? SystemInformation.VerticalScrollBarWidth : 0);
+            ClientSize = new Size(w, h);
         }
         readonly FlowLayoutPanel swatches = new FlowLayoutPanel();
         readonly ToolTip tips = new ToolTip();

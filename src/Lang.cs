@@ -79,6 +79,16 @@ namespace ButterflyCursor
             { "Удалить «Бабочку» с компьютера? Будут удалены программа, её настройки и картинки из папки creatures.", new[] { "Remove Butterfly from this computer? The program, its settings and the pictures in the creatures folder will be deleted.", "«Kapalak» kompyuterdan oʻchirilsinmi? Dastur, uning sozlamalari va creatures papkasidagi rasmlar oʻchiriladi." } },
             { "«Бабочка» удалена.", new[] { "Butterfly has been removed.", "«Kapalak» oʻchirildi." } },
 
+            { "Рука-помощница", new[] { "Helper hand", "Yordamchi qoʻl" } },
+            { "Развлечения", new[] { "Fun", "Koʻngilochar" } },
+            { "Реакция на клик: искры, кувырок, ниндзя бросает сюрикен", new[] { "React to clicks: sparks, a somersault, the ninja throws a shuriken", "Bosishga javob: uchqunlar, umbaloq, ninja shuriken otadi" } },
+            { "Сезонные эффекты: снег, листья, сакура, праздники", new[] { "Seasonal effects: snow, leaves, sakura, holidays", "Mavsumiy effektlar: qor, barglar, sakura, bayramlar" } },
+            { "Танцевать под музыку", new[] { "Dance to music", "Musiqaga raqs tushish" } },
+            { "Ночное свечение: вечером и ночью светится ярче", new[] { "Night glow: shines brighter in the evening and at night", "Tungi yogʻdu: kechqurun va tunda yorqinroq porlaydi" } },
+            { "▶ Демонстрация для видео", new[] { "▶ Demo for videos", "▶ Video uchun namoyish" } },
+            { "■ Остановить демонстрацию", new[] { "■ Stop the demo", "■ Namoyishni toʻxtatish" } },
+            { "Демонстрация для видео", new[] { "Demo for videos", "Video uchun namoyish" } },
+
             // behaviour
             { "Поведение", new[] { "Behaviour", "Xatti-harakat" } },
             { "Скорость", new[] { "Speed", "Tezlik" } },

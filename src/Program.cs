@@ -84,6 +84,7 @@ namespace ButterflyCursor
         [DllImport("shcore.dll")] public static extern int SetProcessDpiAwareness(int value);
         [DllImport("user32.dll")] public static extern bool SetProcessDPIAware();
         [DllImport("user32.dll")] public static extern bool GetCursorPos(out POINT p);
+        [DllImport("user32.dll")] public static extern short GetAsyncKeyState(int vk);
         [DllImport("user32.dll")] public static extern IntPtr GetForegroundWindow();
         [DllImport("user32.dll")] public static extern int GetWindowLong(IntPtr hwnd, int index);
         [DllImport("user32.dll")] public static extern uint GetWindowThreadProcessId(IntPtr hwnd, out uint pid);
@@ -151,9 +152,10 @@ namespace ButterflyCursor
 
     sealed class Particle
     {
-        public float X, Y, Vx, Vy, Life, MaxLife, Size, Phase;
+        public float X, Y, Vx, Vy, Life, MaxLife, Size, Phase, Rot, Spin;
         public int Rgb;
         public bool Star;
+        public SeasonFx Kind;          // None = glowing dust; otherwise a snowflake, leaf, petal…
     }
 
     /// <summary>
@@ -266,6 +268,32 @@ namespace ButterflyCursor
         // creature state
         float px, py, vx, vy, angle, phase, wing = 1f, facing = 1f, moving;
         bool resting, paused, wasIdle, fullscreen, dozing;
+
+        public static Overlay Current;
+        /// <summary>Demo mode for recording videos: flies figure eights on its own, ignoring the mouse.</summary>
+        public bool Demo;
+        public event Action DemoChanged;
+        public void ToggleDemo() { Demo = !Demo; resting = false; if (DemoChanged != null) DemoChanged(); }
+
+        // click reactions
+        bool mouseWasDown;
+        float hopT, flipT;
+        readonly List<Shot> shots = new List<Shot>();
+        // easter eggs: circles make it dizzy (then it sits on the pointer), shaking scares it away
+        const float DizzyLen = 7f;
+        float dizzyT, scaredT, circleAcc, lastMoveAngle = float.NaN;
+        PointF scareTarget;
+        Native.POINT prevCur;
+        int lastShakeSign;
+        readonly List<double> shakeTimes = new List<double>();
+        // dancing to music
+        readonly AudioMeter audio = new AudioMeter();
+        float level, levelAvg, beat;
+        double lastBeat;
+        // what the extra effects add to the drawing
+        float funLift, spinDeg, pulse = 1f;
+        SeasonFx[] seasonFx = new SeasonFx[0];
+        double seasonChecked = -1000;
         float scale = 1f;      // < 1 while dozing by the Start button
         double lastFullscreenCheck;
         double last, lastMove, lastTopmost, lastStartLookup = -1000;
@@ -287,6 +315,7 @@ namespace ButterflyCursor
 
             using (Graphics g = Graphics.FromHwnd(IntPtr.Zero)) dpi = g.DpiX / 96f;
 
+            Current = this;
             ApplySettings();
             BuildTray();
             Cfg.Changed += ApplySettings;
@@ -296,11 +325,22 @@ namespace ButterflyCursor
             last = lastMove = clock.Elapsed.TotalSeconds;
 
             timer.Interval = 15;
-            timer.Tick += delegate { Frame(); };
+            // a drawing glitch must never turn into an error window on the user's screen
+            timer.Tick += delegate
+            {
+                try { Frame(); }
+                catch (Exception ex)
+                {
+                    if (Environment.GetEnvironmentVariable("BUTTERFLY_DEBUG") == "1")
+                        try { System.IO.File.AppendAllText(System.IO.Path.Combine(System.IO.Path.GetTempPath(), "butterfly-debug.txt"), ex + Environment.NewLine); } catch { }
+                }
+            };
             timer.Start();
 
             if (Array.IndexOf(Environment.GetCommandLineArgs(), "--settings") >= 0)
                 Shown += delegate { ShowSettings(); };
+            // "Butterfly.exe --demo" starts straight in the demo mode (handy for recording)
+            if (Array.IndexOf(Environment.GetCommandLineArgs(), "--demo") >= 0) Demo = true;
         }
 
         protected override bool ShowWithoutActivation { get { return true; } }
@@ -466,6 +506,11 @@ namespace ButterflyCursor
             var who = new ToolStripMenuItem(L.T("Существо"));
             menu.Items.Add(who);
 
+            var demo = new ToolStripMenuItem(L.T("Демонстрация для видео")) { Checked = Demo };
+            demo.Click += delegate { ToggleDemo(); };
+            DemoChanged += delegate { demo.Checked = Demo; };
+            menu.Items.Add(demo);
+
             var hide = new ToolStripMenuItem(L.T("Спрятать")) { CheckOnClick = true };
             hide.CheckedChanged += delegate { paused = hide.Checked; };
             menu.Items.Add(hide);
@@ -625,7 +670,137 @@ namespace ButterflyCursor
             p.Phase = Rand(0, 6.28f);
             p.Rgb = Cfg.DustColor(rnd, now).ToArgb() & 0xFFFFFF;
             p.Star = rnd.Next(4) == 0;
+            if (Cfg.Seasons && seasonFx.Length > 0 && rnd.Next(10) < 4)
+            {
+                // snowflakes, leaves, petals, confetti, pumpkins: bigger, slower, tumbling
+                p.Kind = seasonFx[rnd.Next(seasonFx.Length)];
+                p.Size = Rand(5f, 9f) * dpi * sizeK * (p.Kind == SeasonFx.Pumpkins ? 1.3f : 1f);
+                p.MaxLife = p.Life = Rand(1.6f, 2.8f) * lifeK;
+                p.Vy = Rand(-25f, 10f) * dpi;
+                p.Rot = Rand(0, 360);
+                p.Spin = Rand(-200f, 200f);
+                p.Rgb = rnd.Next(SeasonSprites.Variants);
+            }
             particles.Add(p);
+        }
+
+        /// <summary>A ring of sparks flying outwards (clicks, shuriken hits, beats, being scared).</summary>
+        void Burst(float x, float y, int n, double now)
+        {
+            float sizeK = 0.4f + Cfg.DustSize / 50f * 0.6f;
+            for (int i = 0; i < n && particles.Count < 700; i++)
+            {
+                float a = Rand(0, 6.2832f), v = Rand(150f, 420f) * dpi;
+                var p = new Particle();
+                p.X = x; p.Y = y;
+                p.Vx = (float)Math.Cos(a) * v; p.Vy = (float)Math.Sin(a) * v;
+                p.MaxLife = p.Life = Rand(0.45f, 0.9f);
+                p.Size = Rand(1.2f, 2.6f) * dpi * sizeK * 1.2f;
+                p.Phase = Rand(0, 6.28f);
+                p.Rgb = Cfg.DustColor(rnd, now).ToArgb() & 0xFFFFFF;
+                p.Star = rnd.Next(3) == 0;
+                particles.Add(p);
+            }
+        }
+
+        /// <summary>Clicks, the two easter eggs and the music meter.</summary>
+        void UpdateFun(Native.POINT cur, double now, float dt)
+        {
+            bool visible = !paused && !dozing;
+
+            // clicks: polling the left button, no mouse hook needed
+            // bit 0x8000 = held now; bit 1 = pressed since the last check (catches very short clicks)
+            short state = Native.GetAsyncKeyState(0x01);
+            bool down = (state & 0x8000) != 0;
+            bool clicked = !mouseWasDown && (down || (state & 1) != 0);
+            if (clicked && visible && Cfg.ClickFx)
+            {
+                Burst(cur.X, cur.Y, 18, now);
+                if (sitSprite != null && !resting)
+                {
+                    // the ninja throws a shuriken at the spot
+                    float sx = px, sy = py - S * 0.1f, ddx = cur.X - sx, ddy = cur.Y - sy;
+                    float len = Math.Max(1f, (float)Math.Sqrt(ddx * ddx + ddy * ddy)), v = 1600f * dpi;
+                    shots.Add(new Shot { X = sx, Y = sy, Vx = ddx / len * v, Vy = ddy / len * v, Life = len / v });
+                }
+                else if (style == MoveStyle.Fly || style == MoveStyle.Float || style == MoveStyle.Wave || style == MoveStyle.Crawl) flipT = 0.6f;
+                else hopT = 0.45f;
+            }
+            mouseWasDown = down;
+            if (hopT > 0) hopT = Math.Max(0, hopT - dt);
+            if (flipT > 0) flipT = Math.Max(0, flipT - dt);
+
+            for (int i = shots.Count - 1; i >= 0; i--)
+            {
+                Shot sh = shots[i];
+                sh.X += sh.Vx * dt; sh.Y += sh.Vy * dt; sh.Rot += 1080f * dt; sh.Life -= dt;
+                if (sh.Life <= 0) { Burst(sh.X, sh.Y, 14, now); shots.RemoveAt(i); }
+            }
+
+            // easter eggs, from how the pointer moves
+            float mx = cur.X - prevCur.X, my = cur.Y - prevCur.Y;
+            prevCur = cur;
+            float step = (float)Math.Sqrt(mx * mx + my * my);
+            if (step > 4f * dpi && dt > 0)
+            {
+                float ang = (float)Math.Atan2(my, mx);
+                if (!float.IsNaN(lastMoveAngle))
+                {
+                    float d = ang - lastMoveAngle;
+                    while (d > Math.PI) d -= 6.2832f;
+                    while (d < -Math.PI) d += 6.2832f;
+                    if (Math.Abs(d) < 1.3f) circleAcc += d; else circleAcc *= 0.5f;
+                }
+                lastMoveAngle = ang;
+
+                if (step / dt > 1800f * dpi && Math.Abs(mx) > Math.Abs(my))
+                {
+                    int sign = Math.Sign(mx);
+                    // drawing circles also flips left/right all the time; only count it when not circling
+                    if (lastShakeSign != 0 && sign != lastShakeSign && Math.Abs(circleAcc) < 6.2832f) shakeTimes.Add(now);
+                    lastShakeSign = sign;
+                }
+            }
+            circleAcc *= 1f - Math.Min(1f, dt * 0.6f);
+            shakeTimes.RemoveAll(delegate(double x) { return now - x > 1.2; });
+
+            if (Math.Abs(circleAcc) > 6.2832f * 4f && dizzyT <= 0 && scaredT <= 0 && visible)
+            {
+                dizzyT = DizzyLen;
+                circleAcc = 0;
+            }
+            if (shakeTimes.Count >= 6 && scaredT <= 0 && visible)
+            {
+                // flees to the far side of the screen for a moment
+                Rectangle b = Screen.FromPoint(new Point(cur.X, cur.Y)).Bounds;
+                scareTarget = new PointF(cur.X < b.Left + b.Width / 2 ? b.Right - S : b.Left + S, b.Top + b.Height * 0.3f);
+                scaredT = 2.5f;
+                dizzyT = 0;
+                shakeTimes.Clear();
+                Burst(px, py, 24, now);
+            }
+            if (dizzyT > 0) dizzyT = Math.Max(0, dizzyT - dt);
+            if (scaredT > 0) scaredT = Math.Max(0, scaredT - dt);
+
+            // music: follow the speaker level, a "beat" is a jump well above the recent average
+            float peak = Cfg.Music && visible ? audio.Peak(now) : 0f;
+            level += (peak - level) * Math.Min(1f, dt * 12f);
+            levelAvg += (peak - levelAvg) * Math.Min(1f, dt * 1.5f);
+            if (peak > 0.06f && peak > levelAvg * 1.45f && now - lastBeat > 0.28)
+            {
+                lastBeat = now;
+                beat = 1f;
+                if (Cfg.Dust) Burst(px, py, 6, now);
+            }
+            beat = Math.Max(0f, beat - dt * 4f);
+
+            // what all of this does to the creature on screen
+            float hop = hopT > 0 ? (float)Math.Sin(Math.PI * (1 - hopT / 0.45f)) : 0f;
+            funLift = S * (0.35f * hop + 0.12f * beat);
+            spinDeg = 0f;
+            if (flipT > 0) spinDeg = 360f * (1f - flipT / 0.6f);
+            if (dizzyT > DizzyLen - 1.2f) spinDeg = (float)(now * 900 % 360);
+            pulse = 1f + 0.08f * level;
         }
 
         void Frame()
@@ -668,7 +843,15 @@ namespace ButterflyCursor
                 lastMove = now;
                 lastCursor = cur;
             }
+            if (now - seasonChecked > 600)
+            {
+                seasonChecked = now;
+                seasonFx = Season.Current();
+            }
+            UpdateFun(cur, now, dt);
             bool idle = dozing || (Cfg.GoHome && now - lastMove > Cfg.IdleSec);
+            // the demo and the easter eggs keep it busy even when the mouse rests
+            if (!dozing && (Demo || dizzyT > 0 || scaredT > 0)) idle = false;
             RefreshStartRects(now, idle && !wasIdle ? 3 : 120);
             wasIdle = idle;
 
@@ -682,6 +865,27 @@ namespace ButterflyCursor
             {
                 PointF perch = Perch(out wantScale);
                 tx = perch.X; ty = perch.Y;
+            }
+            else if (Demo)
+            {
+                // a big, slow figure eight over the middle of the main screen
+                Rectangle wa = Screen.PrimaryScreen.WorkingArea;
+                tx = wa.Left + wa.Width / 2f + (float)Math.Sin(t * 0.55f) * wa.Width * 0.33f;
+                ty = wa.Top + wa.Height * 0.45f + (float)Math.Sin(t * 1.1f) * wa.Height * 0.25f;
+                resting = false;
+            }
+            else if (scaredT > 0)
+            {
+                tx = scareTarget.X; ty = scareTarget.Y;
+                maxSpeed *= 2.2f; arrive *= 2f;
+                resting = false;
+            }
+            else if (dizzyT > 0 && dizzyT <= DizzyLen - 1.2f)
+            {
+                // tired and dizzy: sits right on the tip of the pointer and rides along
+                tx = cur.X; ty = cur.Y - S * 0.32f;
+                maxSpeed *= 2f; arrive *= 4f;
+                resting = false;
             }
             else
             {
@@ -745,14 +949,15 @@ namespace ButterflyCursor
 
             // animation clock: wing beats / leg wiggle / snail stretching
             float freq;
-            if (style == MoveStyle.Fly) freq = resting ? 0.33f : 5f + 5f * moving;
+            bool riding = dizzyT > 0 && dizzyT <= DizzyLen - 1.2f;
+            if (style == MoveStyle.Fly) freq = resting || riding ? 0.33f : 5f + 5f * moving + 6f * level;
             else if (style == MoveStyle.Crawl) freq = 6.5f * moving;
             else if (style == MoveStyle.Float) freq = resting ? 0f : 0.9f;
             else if (style == MoveStyle.Run) freq = 2.6f * moving;              // full run cycles per second
             else if (style == MoveStyle.Wave) freq = 0.8f + 1.4f * moving;
             else freq = 1.6f * moving;
             phase += dt * freq * 6.2832f;
-            float wantWing = resting
+            float wantWing = resting || riding
                 ? 0.80f + 0.20f * (float)Math.Cos(phase)
                 : 0.56f + 0.44f * (float)Math.Cos(phase);
             wing += (wantWing - wing) * Math.Min(1f, dt * 30f);
@@ -783,12 +988,23 @@ namespace ButterflyCursor
                 Particle p = particles[i];
                 p.Life -= dt;
                 if (p.Life <= 0) { particles.RemoveAt(i); continue; }
-                p.Vy += 38f * dpi * dt;
-                p.Vx *= 1f - 1.6f * dt; p.Vy *= 1f - 1.6f * dt;
+                if (p.Kind == SeasonFx.None)
+                {
+                    p.Vy += 38f * dpi * dt;
+                    p.Vx *= 1f - 1.6f * dt; p.Vy *= 1f - 1.6f * dt;
+                }
+                else
+                {
+                    // drifts down slowly, swaying from side to side and tumbling
+                    p.Vy += (45f * dpi - p.Vy) * Math.Min(1f, dt * 1.5f);
+                    p.Vx += ((float)Math.Sin(p.Phase + p.Life * 2.6f) * 40f * dpi - p.Vx) * Math.Min(1f, dt * 2f);
+                    p.Rot += p.Spin * dt;
+                }
                 p.X += p.Vx * dt; p.Y += p.Vy * dt;
             }
 
-            timer.Interval = speed < 1f ? 40 : 15;
+            bool busy = shots.Count > 0 || hopT > 0 || flipT > 0 || beat > 0 || level > 0.02f || dizzyT > 0;
+            timer.Interval = speed < 1f && !busy ? 40 : 15;
             Render(t);
         }
 
@@ -796,7 +1012,7 @@ namespace ButterflyCursor
 
         void Render(float t)
         {
-            float r = S * (Cfg.Aura > 0 ? 1.05f : 0.80f);
+            float r = S * (AuraNow > 0 ? 1.05f : 0.80f) * pulse + funLift;
             float minX = px - r, minY = py - r, maxX = px + r, maxY = py + r;
             foreach (Particle p in particles)
             {
@@ -805,6 +1021,12 @@ namespace ButterflyCursor
                 if (p.Y - pr < minY) minY = p.Y - pr;
                 if (p.X + pr > maxX) maxX = p.X + pr;
                 if (p.Y + pr > maxY) maxY = p.Y + pr;
+            }
+            foreach (Shot sh in shots)
+            {
+                float pr = S * 0.3f;
+                minX = Math.Min(minX, sh.X - pr); minY = Math.Min(minY, sh.Y - pr);
+                maxX = Math.Max(maxX, sh.X + pr); maxY = Math.Max(maxY, sh.Y + pr);
             }
             Rectangle box = Rectangle.FromLTRB((int)Math.Floor(minX), (int)Math.Floor(minY),
                                                (int)Math.Ceiling(maxX), (int)Math.Ceiling(maxY));
@@ -824,9 +1046,11 @@ namespace ButterflyCursor
             if (!paused && !fullscreen)
             {
                 g.TranslateTransform(-box.X, -box.Y);
-                if (Cfg.Aura > 0) DrawAura(g, t);
+                if (AuraNow > 0) DrawAura(g, t);
                 foreach (Particle p in particles) DrawParticle(g, p, t);
+                foreach (Shot sh in shots) DrawShot(g, sh);
                 DrawCreature(g);
+                if (dizzyT > 0) DrawDizzyStars(g, t);
             }
             g.Flush();
 
@@ -839,10 +1063,69 @@ namespace ButterflyCursor
 
         static int FloorTo(int v, int grid) { return (int)Math.Floor(v / (double)grid) * grid; }
 
+        bool NightNow { get { return Cfg.NightGlow && Season.Night; } }
+
+        /// <summary>Glow around the creature: the setting, but at least a soft one at night.</summary>
+        int AuraNow { get { return NightNow ? Math.Max(Cfg.Aura, 45) : Cfg.Aura; } }
+
+        void DrawShot(Graphics g, Shot sh)
+        {
+            GraphicsState st = g.Save();
+            g.TranslateTransform(sh.X, sh.Y);
+            g.RotateTransform(sh.Rot);
+            float r = Math.Max(6f, S * 0.12f);
+            var pts = new PointF[8];
+            for (int i = 0; i < 8; i++)
+            {
+                double a = i * Math.PI / 4;
+                float rr = i % 2 == 0 ? r : r * 0.35f;
+                pts[i] = new PointF((float)Math.Cos(a) * rr, (float)Math.Sin(a) * rr);
+            }
+            using (var glow = new SolidBrush(Color.FromArgb(70, 150, 210, 255))) g.FillEllipse(glow, -r * 1.4f, -r * 1.4f, r * 2.8f, r * 2.8f);
+            using (var br = new SolidBrush(Color.FromArgb(210, 220, 235))) g.FillPolygon(br, pts);
+            using (var pen = new Pen(Color.FromArgb(60, 70, 90), 1.2f)) g.DrawPolygon(pen, pts);
+            using (var hole = new SolidBrush(Color.FromArgb(60, 70, 90))) g.FillEllipse(hole, -r * 0.15f, -r * 0.15f, r * 0.3f, r * 0.3f);
+            g.Restore(st);
+        }
+
+        /// <summary>Little stars circling above the head of a dizzy creature.</summary>
+        void DrawDizzyStars(Graphics g, float t)
+        {
+            float cx = px, cy = py - S * 0.5f * scale, rx = S * 0.28f * scale, ry = S * 0.08f * scale;
+            float r = Math.Max(3f, S * 0.05f);
+            using (var br = new SolidBrush(Color.FromArgb(255, 235, 120)))
+                for (int i = 0; i < 3; i++)
+                {
+                    double a = t * 5 + i * 2.094;
+                    float x = cx + (float)Math.Cos(a) * rx, y = cy + (float)Math.Sin(a) * ry;
+                    var pts = new PointF[10];
+                    for (int k = 0; k < 10; k++)
+                    {
+                        double b = k * Math.PI / 5 - Math.PI / 2;
+                        float rr = k % 2 == 0 ? r : r * 0.45f;
+                        pts[k] = new PointF(x + (float)Math.Cos(b) * rr, y + (float)Math.Sin(b) * rr);
+                    }
+                    g.FillPolygon(br, pts);
+                }
+        }
+
+        void DrawSeasonal(Graphics g, Particle p)
+        {
+            float f = p.Life / p.MaxLife;
+            float a = (f < 0.35f ? f / 0.35f : 1f) * Math.Max(0.4f, Cfg.DustBright / 100f);
+            Bitmap bmp = SeasonSprites.Get(p.Kind, p.Rgb, a);
+            float d = p.Size * 2.2f;
+            GraphicsState st = g.Save();
+            g.TranslateTransform(p.X, p.Y);
+            g.RotateTransform(p.Rot);
+            g.DrawImage(bmp, -d / 2, -d / 2, d, d);
+            g.Restore(st);
+        }
+
         void DrawAura(Graphics g, float t)
         {
             float pulse = 0.85f + 0.15f * (float)Math.Sin(t * 2.2f);
-            int lv = (int)(Cfg.Aura / 100f * pulse * GlowLevels + 0.5f);
+            int lv = (int)(AuraNow / 100f * pulse * GlowLevels + 0.5f);
             if (lv < 1) return;
             int d = Math.Max(16, Math.Min(1400, (int)(S * 2f * scale) & ~15));
             g.DrawImageUnscaled(Glow(Cfg.AuraColor(t).ToArgb() & 0xFFFFFF, Math.Min(GlowLevels, lv), d, true),
@@ -854,7 +1137,8 @@ namespace ButterflyCursor
             float f = p.Life / p.MaxLife;
             float fade = f < 0.7f ? f / 0.7f : 1f;
             float twinkle = 0.72f + 0.28f * (float)Math.Sin(p.Phase + t * 17f);
-            float a = fade * twinkle * Cfg.DustBright / 100f;
+            if (p.Kind != SeasonFx.None) { DrawSeasonal(g, p); return; }
+            float a = Math.Min(1f, fade * twinkle * Cfg.DustBright / 100f * (NightNow ? 1.25f : 1f));
             int lv = (int)(a * GlowLevels + 0.5f);
             if (lv < 1) return;
             if (lv > GlowLevels) lv = GlowLevels;
@@ -872,6 +1156,14 @@ namespace ButterflyCursor
             }
         }
 
+        /// <summary>Hop, flip, dizzy spin and the music pulse, on top of the normal pose.</summary>
+        void ApplyFun(Graphics g)
+        {
+            if (funLift != 0) g.TranslateTransform(0, -funLift);
+            if (spinDeg != 0) g.RotateTransform(spinDeg);
+            if (pulse != 1f) g.ScaleTransform(pulse, pulse);
+        }
+
         void DrawCreature(Graphics g)
         {
             GraphicsState state = g.Save();
@@ -883,6 +1175,7 @@ namespace ButterflyCursor
                 float bob = resting ? 0f : (float)Math.Sin(phase) * S * 0.035f;
                 g.TranslateTransform(px, py + bob);
                 g.ScaleTransform(scale, scale);
+                ApplyFun(g);
                 g.RotateTransform(angle);
 
                 float body = S * 0.035f;            // half-width of the body strip that never folds
@@ -902,6 +1195,7 @@ namespace ButterflyCursor
                 // upright picture that bobs gently in the air
                 g.TranslateTransform(px, py + (float)Math.Sin(phase) * S * 0.05f);
                 g.ScaleTransform(scale, scale);
+                ApplyFun(g);
                 g.RotateTransform(angle);
                 g.DrawImage(sprite, -half, -half, S, S);
             }
@@ -913,6 +1207,7 @@ namespace ButterflyCursor
                     idx = ((int)(phase / 6.2832f * runFrames) % runFrames + runFrames) % runFrames;
                 g.TranslateTransform(px, py);
                 g.ScaleTransform(scale, scale);
+                ApplyFun(g);
                 if (resting && sitSprite != null)
                 {
                     // sitting in meditation: slow breathing
@@ -930,6 +1225,7 @@ namespace ButterflyCursor
                 // a flag on a pole: the cloth is drawn in thin slices that ripple more towards the free end
                 g.TranslateTransform(px, py);
                 g.ScaleTransform(scale, scale);
+                ApplyFun(g);
                 g.RotateTransform(angle * 0.5f);
                 float left = -half + content.X, top = -half + content.Y;
                 float pole = Math.Max(2f, S * 0.025f);
@@ -963,6 +1259,7 @@ namespace ButterflyCursor
                 float s = (float)Math.Sin(phase);
                 g.TranslateTransform(px, py);
                 g.ScaleTransform(scale, scale);
+                ApplyFun(g);
                 g.RotateTransform(angle + 7f * s * moving);
                 float w = S * (1f + 0.04f * s * moving), h = S * (1f - 0.04f * s * moving);
                 g.DrawImage(sprite, -w / 2, -h / 2, w, h);
@@ -973,6 +1270,7 @@ namespace ButterflyCursor
                 float s = (float)Math.Sin(phase) * moving;
                 g.TranslateTransform(px, py);
                 g.ScaleTransform(scale, scale);
+                ApplyFun(g);
                 g.ScaleTransform(facing, 1f);
                 float w = S * (1f + 0.07f * s), h = S * (1f - 0.05f * s);
                 g.DrawImage(sprite, -w / 2, half - h, w, h);
