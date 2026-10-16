@@ -131,6 +131,74 @@ def frame(phase, idle=False):
     return out.resize((OUT, OUT), Image.LANCZOS)
 
 
+def sitting():
+    """Front view, sitting cross-legged in meditation with the katana on his back (for resting on Start)."""
+    img = Image.new("RGBA", (N, N), (0, 0, 0, 0))
+    d = ImageDraw.Draw(img)
+    cx = N // 2
+
+    # katana strapped diagonally across the back (drawn first, behind the body)
+    hilt_top, blade_end = (cx - 230, 330), (cx + 250, 860)
+    glow = Image.new("RGBA", (N, N), (0, 0, 0, 0))
+    ImageDraw.Draw(glow).line([(cx - 150, 420), blade_end], fill=GLOW + (255,), width=40)
+    img.alpha_composite(glow.filter(ImageFilter.GaussianBlur(16)))
+    d = ImageDraw.Draw(img)
+    d.line([(cx - 150, 420), blade_end], fill=OUTLINE, width=28)
+    d.line([(cx - 150, 420), blade_end], fill=BLADE, width=14)
+    d.line([hilt_top, (cx - 150, 420)], fill=OUTLINE, width=32)
+    d.line([hilt_top, (cx - 150, 420)], fill=HILT, width=20)
+    d.line([(cx - 190, 440), (cx - 120, 390)], fill=OUTLINE, width=20)
+
+    dark = tuple(int(c * 0.75) for c in BODY)
+    # crossed legs: thighs out to the knees, shins crossing in front
+    for sx in (-1, 1):
+        hip, knee = (cx + sx * 70, 770), (cx + sx * 250, 860)
+        limb(d, hip, knee, 70, dark)
+    for sx in (-1, 1):
+        knee, foot = (cx + sx * 250, 860), (cx - sx * 60, 900)
+        limb(d, knee, foot, 60, BODY)
+
+    # torso and belt
+    d.rounded_rectangle((cx - 105, 520, cx + 105, 800), radius=60, fill=OUTLINE)
+    d.rounded_rectangle((cx - 95, 528, cx + 95, 792), radius=54, fill=BODY)
+    d.line([(cx - 20, 540), (cx - 20, 780)], fill=BODY_LIGHT, width=22)
+    d.rectangle((cx - 95, 735, cx + 95, 765), fill=SCARF)
+
+    # arms resting on the knees
+    for sx in (-1, 1):
+        shoulder, elbow, hand = (cx + sx * 95, 570), (cx + sx * 175, 700), (cx + sx * 230, 830)
+        limb(d, shoulder, elbow, 44, BODY)
+        limb(d, elbow, hand, 40, BODY)
+        d.ellipse((hand[0] - 26, hand[1] - 26, hand[0] + 26, hand[1] + 26), fill=SKIN, outline=OUTLINE, width=6)
+
+    # scarf around the neck, one end hanging down
+    d.line([(cx - 90, 520), (cx + 90, 520)], fill=OUTLINE, width=56)
+    d.line([(cx - 90, 520), (cx + 90, 520)], fill=SCARF, width=40)
+    d.line([(cx + 60, 525), (cx + 85, 650), (cx + 70, 700)], fill=OUTLINE, width=46, joint="curve")
+    d.line([(cx + 60, 525), (cx + 85, 650), (cx + 70, 700)], fill=SCARF, width=30, joint="curve")
+
+    # head with closed, calm eyes and the headband
+    hx, hy, r = cx, 420, 92
+    d.ellipse((hx - r - 7, hy - r - 7, hx + r + 7, hy + r + 7), fill=OUTLINE)
+    d.ellipse((hx - r, hy - r, hx + r, hy + r), fill=BODY)
+    d.rounded_rectangle((hx - 70, hy - 18, hx + 70, hy + 26), radius=18, fill=SKIN)
+    for ex in (-34, 34):
+        d.arc((hx + ex - 18, hy - 6, hx + ex + 18, hy + 18), 200, 340, fill=OUTLINE, width=7)
+    d.line([(hx - r + 4, hy - 46), (hx + r - 4, hy - 46)], fill=BAND, width=28)
+    d.rectangle((hx - 26, hy - 62, hx + 26, hy - 30), fill=PLATE, outline=OUTLINE, width=4)
+    d.line([(hx + r - 8, hy - 46), (hx + r + 50, hy - 20), (hx + r + 80, hy + 30)], fill=BAND, width=18, joint="curve")
+    d.line([(hx + r - 8, hy - 40), (hx + r + 30, hy + 10), (hx + r + 40, hy + 60)], fill=BAND, width=16, joint="curve")
+
+    a = img.split()[3]
+    halo = a.filter(ImageFilter.GaussianBlur(20)).point(lambda v: int(v * 0.6))
+    out = Image.merge("RGBA", [Image.new("L", (N, N), c) for c in GLOW] + [halo])
+    out.alpha_composite(img)
+    return out.resize((OUT, OUT), Image.LANCZOS)
+
+
+sitting().save("src/ninja_sit.png")
+print("saved src/ninja_sit.png")
+
 strip = Image.new("RGBA", (OUT * (FRAMES + 1), OUT), (0, 0, 0, 0))
 for i in range(FRAMES):
     strip.paste(frame(2 * math.pi * i / FRAMES), (i * OUT, 0))

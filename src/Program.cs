@@ -182,6 +182,12 @@ namespace ButterflyCursor
                 string screen = Screen.FromRectangle(Rectangle.FromLTRB(wr.L, wr.T, wr.R, wr.B)).DeviceName;
                 result[screen] = r.Value;
             }
+            string fake = Environment.GetEnvironmentVariable("BUTTERFLY_TEST_START");
+            if (!string.IsNullOrEmpty(fake))
+            {
+                string[] v = fake.Split(',');
+                result[Screen.PrimaryScreen.DeviceName] = new Rectangle(int.Parse(v[0]), int.Parse(v[1]), int.Parse(v[2]), int.Parse(v[3]));
+            }
             return result;
         }
 
@@ -244,6 +250,7 @@ namespace ButterflyCursor
         Bitmap[] frames = new Bitmap[0];   // animation frames (a strip picture); frames[0] == sprite
         int runFrames = 1, idleFrame;
         RectangleF content;                // visible part of the sprite, for the flag pole
+        Bitmap sitSprite;                  // resting pose (the ninja sitting on Start), if the creature has one
         static readonly ImageAttributes clampEdges = MakeClamp();
 
         static ImageAttributes MakeClamp()
@@ -383,6 +390,20 @@ namespace ButterflyCursor
             }
             sprite = frames[0];
 
+            if (sitSprite != null) { sitSprite.Dispose(); sitSprite = null; }
+            if (c.Id == "ninja")
+                using (System.IO.Stream st = System.Reflection.Assembly.GetExecutingAssembly().GetManifestResourceStream("ninja_sit.png"))
+                using (var sit = new Bitmap(st))
+                {
+                    sitSprite = new Bitmap(S, S, PixelFormat.Format32bppPArgb);
+                    using (Graphics g = Graphics.FromImage(sitSprite))
+                    {
+                        g.InterpolationMode = InterpolationMode.HighQualityBicubic;
+                        g.PixelOffsetMode = PixelOffsetMode.HighQuality;
+                        g.DrawImage(sit, 0, 0, S, S);
+                    }
+                }
+
             if (glow.Count > 4000)
             {
                 foreach (Bitmap bmp in glow.Values) bmp.Dispose();
@@ -502,32 +523,59 @@ namespace ButterflyCursor
             Rectangle s;
             bool found;
             lock (perchLock) found = startRects.TryGetValue(screen.DeviceName, out s);
+            Rectangle b = screen.Bounds, wa = screen.WorkingArea;
+            // which side the taskbar is on: where the working area is smaller than the screen
+            bool top = wa.Top > b.Top, left = wa.Left > b.Left, right = wa.Right < b.Right;
+            bool vertical = left || right;
+
             wantScale = 1f;
+            float size = S;
             if (dozing)
             {
-                // asleep: shrinks to the size of the Start icon and sits right beside it on the taskbar
-                float size = found ? Math.Min(s.Width, s.Height) * 0.8f : 32f * dpi;
+                // asleep: shrinks to the size of the Start icon
+                size = found ? Math.Min(s.Width, s.Height) * 0.8f : 32f * dpi;
                 wantScale = Math.Min(1f, size / S);
-                if (!found)
-                {
-                    Rectangle area = screen.WorkingArea;
-                    return new PointF(area.Left + area.Width / 2f, area.Bottom - size * 0.6f);
-                }
-                // the icon is about 0.4 of the taskbar height wide and sits in the middle of the button
-                float x = s.Left + s.Width / 2f - s.Height * 0.2f - size * 0.42f;
-                if (x - size / 2 < screen.Bounds.Left)      // Start at the screen edge (Windows 10): sit on top of it
-                    return new PointF(s.Left + s.Width / 2f, s.Top - size * 0.45f);
-                return new PointF(x, s.Top + s.Height / 2f);
             }
-            // the snail is drawn from the side and stands on the taskbar; the others sit on its edge
-            float lift = style == MoveStyle.Slide ? 0.30f : style == MoveStyle.Float ? 0.40f
-                       : style == MoveStyle.Run ? 0.46f : style == MoveStyle.Wave ? 0.48f : 0.12f;
+
+            PointF p;
             if (!found)
+                p = new PointF(wa.Left + wa.Width / 2f, wa.Bottom - size * 0.5f);
+            else if (dozing)
             {
-                Rectangle wa = screen.WorkingArea;
-                return new PointF(wa.Left + wa.Width / 2f, wa.Bottom - S * lift);
+                // right next to the icon itself (about 0.4 of the taskbar thickness, in the middle of the button);
+                // on the left side if there is room, otherwise on the right (Windows 10: Start in the corner)
+                float cx = s.Left + s.Width / 2f, cy = s.Top + s.Height / 2f;
+                if (vertical)
+                    p = new PointF(cx, cy + s.Width * 0.2f + size * 0.42f);
+                else
+                {
+                    float icon = s.Height * 0.2f;
+                    p = new PointF(cx - icon - size * 0.42f, cy);
+                    if (p.X - size / 2 < b.Left) p = new PointF(cx + icon + size * 0.42f, cy);
+                }
             }
-            return new PointF(s.Left + s.Width * 0.25f, s.Top - S * lift);
+            else if (sitSprite != null)
+            {
+                // the ninja sits right on top of the Start button
+                float cx = s.Left + s.Width / 2f;
+                p = top ? new PointF(cx, s.Bottom + S * 0.45f) : new PointF(cx, s.Top + s.Height * 0.42f - S * 0.40f);
+            }
+            else
+            {
+                // side-view creatures stand on the taskbar edge; the others sit on it
+                float lift = style == MoveStyle.Slide ? 0.30f : style == MoveStyle.Float ? 0.40f
+                           : style == MoveStyle.Run ? 0.46f : style == MoveStyle.Wave ? 0.48f : 0.12f;
+                if (left) p = new PointF(s.Right + S * 0.5f, s.Top + s.Height / 2f);
+                else if (right) p = new PointF(s.Left - S * 0.5f, s.Top + s.Height / 2f);
+                else if (top) p = new PointF(s.Left + s.Width * 0.25f, s.Bottom + S * lift);
+                else p = new PointF(s.Left + s.Width * 0.25f, s.Top - S * lift);
+            }
+
+            // never leave the screen (Start in the very corner, small screens, big creatures)
+            float h = size / 2;
+            p.X = Math.Max(b.Left + h, Math.Min(b.Right - h, p.X));
+            p.Y = Math.Max(b.Top + h * 0.5f, Math.Min(b.Bottom - h * 0.5f, p.Y));
+            return p;
         }
 
         /// <summary>True when the active window is a game / video covering its whole monitor.</summary>
@@ -865,8 +913,17 @@ namespace ButterflyCursor
                     idx = ((int)(phase / 6.2832f * runFrames) % runFrames + runFrames) % runFrames;
                 g.TranslateTransform(px, py);
                 g.ScaleTransform(scale, scale);
-                g.ScaleTransform(facing, 1f);
-                g.DrawImage(frames[Math.Min(idx, frames.Length - 1)], -half, -half, S, S);
+                if (resting && sitSprite != null)
+                {
+                    // sitting in meditation: slow breathing
+                    float breath = 1f + 0.018f * (float)Math.Sin(clock.Elapsed.TotalSeconds * 1.6);
+                    g.DrawImage(sitSprite, -half, half - S * breath, S, S * breath);
+                }
+                else
+                {
+                    g.ScaleTransform(facing, 1f);
+                    g.DrawImage(frames[Math.Min(idx, frames.Length - 1)], -half, -half, S, S);
+                }
             }
             else if (style == MoveStyle.Wave)
             {

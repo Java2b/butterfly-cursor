@@ -50,6 +50,7 @@ namespace ButterflyCursor
                 loading = true;
                 styleBox.SelectedIndex = (int)Cfg.StyleOf(creatures[creatureBox.SelectedIndex]);
                 loading = false;
+                UpdateFlagRow();
                 Cfg.Apply();
             };
             styleBox.Items.AddRange(new object[] { L.T("Летает (машет крыльями)"), L.T("Ползает (вид сверху)"), L.T("Скользит, как улитка (вид сбоку)"), L.T("Парит (не поворачивается)"), L.T("Бежит (вид сбоку, по кадрам)"), L.T("Развевается, как флаг") });
@@ -57,7 +58,12 @@ namespace ButterflyCursor
             flagBox.DropDownStyle = ComboBoxStyle.DropDownList;
             flagBox.MaxDropDownItems = 20;
             for (int i = 0; i < Flags.Codes.Count; i++) flagBox.Items.Add(Flags.Names[i] + " (" + Flags.Codes[i].ToUpperInvariant() + ")");
-            Row(L.T("Флаг страны"), flagBox);
+            // the country list only matters for the flag, so it is shown only then
+            int flagRow = NewRow();
+            flagLabel = new Label { Text = L.T("Флаг страны"), AutoSize = true, Anchor = AnchorStyles.Left, Margin = new Padding(3, 6, 12, 6) };
+            flagBox.Dock = DockStyle.Fill;
+            grid.Controls.Add(flagLabel, 0, flagRow);
+            grid.Controls.Add(flagBox, 1, flagRow);
             flagBox.SelectedIndexChanged += delegate
             {
                 if (loading || flagBox.SelectedIndex < 0) return;
@@ -197,6 +203,13 @@ namespace ButterflyCursor
 
         HelpForm helpForm;
         readonly ComboBox flagBox = new ComboBox();
+        Label flagLabel;
+
+        void UpdateFlagRow()
+        {
+            bool on = creatureBox.SelectedIndex >= 0 && creatures[creatureBox.SelectedIndex].Id == "flag";
+            flagLabel.Visible = flagBox.Visible = on;
+        }
         readonly FlowLayoutPanel swatches = new FlowLayoutPanel();
         readonly ToolTip tips = new ToolTip();
         static readonly int[] customColors = new int[16];
@@ -326,6 +339,7 @@ namespace ButterflyCursor
             }
             creatureBox.SelectedIndex = sel;
             styleBox.SelectedIndex = (int)Cfg.StyleOf(creatures[sel]);
+            UpdateFlagRow();
             foreach (Action a in refreshers) a();
             loading = false;
         }
