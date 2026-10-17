@@ -197,7 +197,13 @@ namespace ButterflyCursor
             refreshers.Add(delegate { desk.Checked = Cfg.DesktopMenu; });
             desk.CheckedChanged += delegate { if (!loading) Cfg.DesktopMenu = desk.Checked; };
 
-            var buttons = new FlowLayoutPanel { FlowDirection = FlowDirection.RightToLeft, AutoSize = true, Dock = DockStyle.Fill, Margin = new Padding(0, 12, 0, 0) };
+            // the buttons stay pinned at the bottom of the window, outside the scrolling list
+            buttons.FlowDirection = FlowDirection.RightToLeft;
+            buttons.Dock = DockStyle.Bottom;
+            buttons.AutoSize = true;
+            buttons.AutoSizeMode = AutoSizeMode.GrowAndShrink;
+            buttons.Padding = new Padding(10, 8, 22, 10);
+            buttons.BackColor = Color.FromArgb(243, 245, 248);
             var close = new Button { Text = L.T("Закрыть"), AutoSize = true, FlatStyle = FlatStyle.System, MinimumSize = new Size(90, 0) };
             var reset = new Button { Text = L.T("По умолчанию"), AutoSize = true, FlatStyle = FlatStyle.System, MinimumSize = new Size(110, 0) };
             close.Click += delegate { Close(); };
@@ -212,7 +218,8 @@ namespace ButterflyCursor
                 helpForm.Activate();
             };
             buttons.Controls.Add(help);
-            Wide(buttons);
+            Controls.Add(buttons);
+            scroller.BringToFront();             // the list fills whatever space the button bar leaves
             AcceptButton = close;
             CancelButton = close;
 
@@ -224,6 +231,7 @@ namespace ButterflyCursor
         Label flagLabel;
 
         readonly Panel scroller = new Panel();
+        readonly FlowLayoutPanel buttons = new FlowLayoutPanel();
 
         void UpdateFlagRow()
         {
@@ -235,9 +243,10 @@ namespace ButterflyCursor
         void FitToScreen()
         {
             Size pref = grid.GetPreferredSize(Size.Empty);
+            int bar = buttons.GetPreferredSize(Size.Empty).Height;
             int maxH = Screen.FromPoint(Cursor.Position).WorkingArea.Height - 60;
-            int h = Math.Min(pref.Height + 28, maxH);
-            int w = pref.Width + 48 + (pref.Height + 28 > maxH ? SystemInformation.VerticalScrollBarWidth : 0);
+            int h = Math.Min(pref.Height + 20 + bar, maxH);
+            int w = pref.Width + 48 + (pref.Height + 20 + bar > maxH ? SystemInformation.VerticalScrollBarWidth : 0);
             ClientSize = new Size(w, h);
         }
         readonly FlowLayoutPanel swatches = new FlowLayoutPanel();
