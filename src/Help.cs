@@ -11,7 +11,6 @@ namespace ButterflyCursor
             Text = L.T("Бабочка — инструкция");
             Icon = icon;
             Font = new Font("Segoe UI", 10f);
-            BackColor = Color.White;
             StartPosition = FormStartPosition.CenterScreen;
             ClientSize = new Size(600, 640);
             MinimizeBox = false;
@@ -19,7 +18,7 @@ namespace ButterflyCursor
 
             var box = new RichTextBox
             {
-                Dock = DockStyle.Fill, ReadOnly = true, BorderStyle = BorderStyle.None, BackColor = Color.White,
+                Dock = DockStyle.Fill, ReadOnly = true, BorderStyle = BorderStyle.None,
                 ScrollBars = RichTextBoxScrollBars.Vertical, DetectUrls = false, TabStop = false
             };
             Controls.Add(box);
@@ -31,10 +30,11 @@ namespace ButterflyCursor
                 string line = raw.Trim();
                 bool head = line.StartsWith("# ");
                 box.SelectionFont = head ? heading : Font;
-                box.SelectionColor = head ? Color.FromArgb(30, 110, 200) : Color.FromArgb(40, 40, 40);
+                box.SelectionColor = head ? Theme.Accent : Theme.Text;
                 box.AppendText((head ? line.Substring(2) : line) + "\n");
             }
             box.Select(0, 0);
+            Theme.Apply(this);
         }
 
         const string Russian = @"# Что это

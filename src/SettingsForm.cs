@@ -11,7 +11,8 @@ namespace ButterflyCursor
     {
         readonly TableLayoutPanel grid = new TableLayoutPanel();
         readonly List<Action> refreshers = new List<Action>();
-        readonly ComboBox creatureBox = new ComboBox(), styleBox = new ComboBox(), themeBox = new ComboBox();
+        readonly ComboBox styleBox = new ComboBox(), themeBox = new ComboBox();
+        CreaturePicker picker;
         List<Creature> creatures;
         bool loading;
 
@@ -20,7 +21,6 @@ namespace ButterflyCursor
             Text = L.T("Бабочка — настройки");
             Icon = icon;
             Font = new Font("Segoe UI", 9f);
-            BackColor = Color.White;
             FormBorderStyle = FormBorderStyle.FixedDialog;
             MaximizeBox = false;
             MinimizeBox = false;
@@ -41,20 +41,32 @@ namespace ButterflyCursor
             grid.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 64));
             scroller.Controls.Add(grid);
 
-            // ----- creature -----
-            Header(L.T("Существо"));
-            creatureBox.DropDownStyle = styleBox.DropDownStyle = themeBox.DropDownStyle = ComboBoxStyle.DropDownList;
-            Row(L.T("Кто летает за мышью"), creatureBox);
-            creatureBox.SelectedIndexChanged += delegate
+            // ----- creature: title with the light/dark switch, then the picker -----
+            float scale;
+            using (Graphics sg = CreateGraphics()) scale = sg.DpiX / 96f;
+            var head = new TableLayoutPanel { ColumnCount = 2, RowCount = 1, AutoSize = true, Dock = DockStyle.Fill, Margin = new Padding(0, 6, 0, 6) };
+            head.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
+            head.ColumnStyles.Add(new ColumnStyle(SizeType.AutoSize));
+            head.Controls.Add(new Label { Text = L.T("Существо"), AutoSize = true, Font = new Font("Segoe UI", 13f, FontStyle.Bold), Anchor = AnchorStyles.Left, Margin = new Padding(0) }, 0, 0);
+            var themeSwitch = new ThemeToggle { Size = new Size((int)(56 * scale), (int)(28 * scale)), Anchor = AnchorStyles.Right, Margin = new Padding(0, 2, 2, 0) };
+            tips.SetToolTip(themeSwitch, L.T("Светлая / тёмная тема"));
+            themeSwitch.Toggled += delegate { Cfg.DarkTheme = !Cfg.DarkTheme; Cfg.Apply(); };
+            head.Controls.Add(themeSwitch, 1, 0);
+            Wide(head);
+
+            picker = new CreaturePicker(scale) { Margin = new Padding(0, 0, 0, 8) };
+            picker.Picked += delegate(Creature c)
             {
-                if (loading || creatureBox.SelectedIndex < 0) return;
-                Cfg.CreatureId = creatures[creatureBox.SelectedIndex].Id;
+                if (loading || c == null) return;
+                Cfg.CreatureId = c.Id;
                 loading = true;
-                styleBox.SelectedIndex = (int)Cfg.StyleOf(creatures[creatureBox.SelectedIndex]);
+                styleBox.SelectedIndex = (int)Cfg.StyleOf(c);
                 loading = false;
                 UpdateFlagRow();
                 Cfg.Apply();
             };
+            Wide(picker);
+            styleBox.DropDownStyle = themeBox.DropDownStyle = ComboBoxStyle.DropDownList;
             styleBox.Items.AddRange(new object[] { L.T("Летает (машет крыльями)"), L.T("Ползает (вид сверху)"), L.T("Скользит, как улитка (вид сбоку)"), L.T("Парит (не поворачивается)"), L.T("Бежит (вид сбоку, по кадрам)"), L.T("Развевается, как флаг") });
             Row(L.T("Как двигается"), styleBox);
             flagBox.DropDownStyle = ComboBoxStyle.DropDownList;
@@ -78,12 +90,13 @@ namespace ButterflyCursor
             refreshers.Add(delegate { flagBox.SelectedIndex = Math.Max(0, Flags.Codes.IndexOf(Cfg.FlagCode)); });
             styleBox.SelectedIndexChanged += delegate
             {
-                if (loading || creatureBox.SelectedIndex < 0) return;
-                Cfg.SetStyle(creatures[creatureBox.SelectedIndex], (MoveStyle)styleBox.SelectedIndex);
+                if (loading || picker.Selected == null) return;
+                Cfg.SetStyle(picker.Selected, (MoveStyle)styleBox.SelectedIndex);
                 Cfg.Apply();
             };
             Slider(L.T("Размер"), 32, 200, delegate { return Cfg.Size; }, delegate(int v) { Cfg.Size = v; }, "{0} px");
             var add = new Button { Text = L.T("Добавить картинку…"), AutoSize = true, FlatStyle = FlatStyle.System, Margin = new Padding(3, 2, 10, 2) };
+            tips.SetToolTip(add, L.T("Свои картинки появятся в разделе «Мои картинки»"));
             add.Click += delegate { AddPictures(); };
             var link = new LinkLabel { Text = L.T("Открыть папку с картинками"), AutoSize = true, Anchor = AnchorStyles.Left, Margin = new Padding(3, 8, 3, 6) };
             link.LinkClicked += delegate
@@ -203,7 +216,7 @@ namespace ButterflyCursor
             buttons.AutoSize = true;
             buttons.AutoSizeMode = AutoSizeMode.GrowAndShrink;
             buttons.Padding = new Padding(10, 8, 22, 10);
-            buttons.BackColor = Color.FromArgb(243, 245, 248);
+            buttons.Tag = "bar";
             var close = new Button { Text = L.T("Закрыть"), AutoSize = true, FlatStyle = FlatStyle.System, MinimumSize = new Size(90, 0) };
             var reset = new Button { Text = L.T("По умолчанию"), AutoSize = true, FlatStyle = FlatStyle.System, MinimumSize = new Size(110, 0) };
             close.Click += delegate { Close(); };
@@ -224,6 +237,7 @@ namespace ButterflyCursor
             CancelButton = close;
 
             Reload();
+            Theme.Apply(this);
         }
 
         HelpForm helpForm;
@@ -235,7 +249,7 @@ namespace ButterflyCursor
 
         void UpdateFlagRow()
         {
-            bool on = creatureBox.SelectedIndex >= 0 && creatures[creatureBox.SelectedIndex].Id == "flag";
+            bool on = picker.Selected != null && picker.Selected.Id == "flag";
             flagLabel.Visible = flagBox.Visible = on;
             FitToScreen();
         }
@@ -258,7 +272,7 @@ namespace ButterflyCursor
             var b = new Button
             {
                 Size = new Size(30, 24), FlatStyle = FlatStyle.Flat, Margin = new Padding(3, 3, 3, 3),
-                BackColor = Color.FromArgb(255, Color.FromArgb(rgb)), Cursor = Cursors.Hand, UseVisualStyleBackColor = false
+                BackColor = Color.FromArgb(255, Color.FromArgb(rgb)), Cursor = Cursors.Hand, UseVisualStyleBackColor = false, Tag = "swatch"
             };
             b.FlatAppearance.BorderColor = Color.FromArgb(150, 150, 150);
             return b;
@@ -315,6 +329,7 @@ namespace ButterflyCursor
 
             var add = new Button { Text = L.T("+ Добавить цвет"), AutoSize = true, FlatStyle = FlatStyle.System, Margin = new Padding(3, 2, 3, 2) };
             add.Enabled = Cfg.Rainbow || Cfg.Colors.Count < Cfg.MaxColors;
+            add.FlatStyle = FlatStyle.Flat; add.BackColor = Theme.Card; add.ForeColor = Theme.Text; add.FlatAppearance.BorderColor = Theme.Border;
             add.Click += delegate
             {
                 int rgb;
@@ -326,6 +341,12 @@ namespace ButterflyCursor
             };
             swatches.Controls.Add(add);
             swatches.ResumeLayout();
+        }
+
+        protected override void OnLoad(EventArgs e)
+        {
+            base.OnLoad(e);
+            CenterToScreen();          // the size is only known after the list was filled
         }
 
         protected override void OnFormClosed(FormClosedEventArgs e)
@@ -369,14 +390,8 @@ namespace ButterflyCursor
         {
             loading = true;
             creatures = Creature.All();
-            creatureBox.Items.Clear();
-            int sel = 0;
-            for (int i = 0; i < creatures.Count; i++)
-            {
-                creatureBox.Items.Add(creatures[i].Title);
-                if (creatures[i].Id == Cfg.CreatureId) sel = i;
-            }
-            creatureBox.SelectedIndex = sel;
+            int sel = Math.Max(0, creatures.FindIndex(delegate(Creature c) { return c.Id == Cfg.CreatureId; }));
+            picker.SetItems(creatures, creatures[sel].Id);
             styleBox.SelectedIndex = (int)Cfg.StyleOf(creatures[sel]);
             UpdateFlagRow();
             foreach (Action a in refreshers) a();
@@ -404,7 +419,7 @@ namespace ButterflyCursor
             var l = new Label
             {
                 Text = text, AutoSize = true, Font = new Font(Font, FontStyle.Bold),
-                ForeColor = Color.FromArgb(30, 110, 200), Margin = new Padding(0, 12, 0, 4)
+                Tag = "header", Margin = new Padding(0, 12, 0, 4)
             };
             Wide(l);
         }
@@ -429,10 +444,10 @@ namespace ButterflyCursor
             var bar = new TrackBar
             {
                 Minimum = min, Maximum = max, TickStyle = TickStyle.None, AutoSize = false, Height = 26,
-                Dock = DockStyle.Fill, BackColor = Color.White,
+                Dock = DockStyle.Fill,
                 SmallChange = 1, LargeChange = Math.Max(1, (max - min) / 10)
             };
-            var value = new Label { AutoSize = true, Anchor = AnchorStyles.Left, ForeColor = Color.DimGray };
+            var value = new Label { AutoSize = true, Anchor = AnchorStyles.Left, Tag = "sub" };
             Row(label, bar);
             grid.Controls.Add(value, 2, grid.RowCount - 1);
             bar.ValueChanged += delegate

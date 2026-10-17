@@ -66,6 +66,8 @@ namespace ButterflyCursor
         public int[] RestSeq;              // order of the resting frames (counted from the first one after the run cycle)
         public float RestStep = 0.8f;      // seconds per resting frame
         public bool Flies;                 // side-view frames, but it flies (hovers, keeps flapping)
+        public string Category = "mine";   // insects, animals, heroes, fantasy, weather, flags, mine
+        public string Desc;                // one line for the preview (Russian source text, translated by L.T)
 
         public Bitmap Load()
         {
@@ -101,22 +103,22 @@ namespace ButterflyCursor
         {
             var list = new List<Creature>
             {
-                new Creature { Id = "butterfly", Title = L.T("Бабочка"), DefaultStyle = MoveStyle.Fly },
-                new Creature { Id = "beetle", Title = L.T("Жук"), DefaultStyle = MoveStyle.Crawl },
-                new Creature { Id = "spider", Title = L.T("Паук"), DefaultStyle = MoveStyle.Crawl },
-                new Creature { Id = "snail", Title = L.T("Улитка"), DefaultStyle = MoveStyle.Slide },
-                new Creature { Id = "ninja", Title = L.T("Ниндзя"), DefaultStyle = MoveStyle.Run },
-                new Creature { Id = "hand", Title = L.T("Рука-помощница"), DefaultStyle = MoveStyle.Run },
-                new Creature { Id = "luchador", Title = L.T("Лучадор «Бабочка»"), DefaultStyle = MoveStyle.Run },
-                new Creature { Id = "dragon", Title = L.T("Дракон"), DefaultStyle = MoveStyle.Run, RunFrames = 6, RestSeq = new[] { 0, 1 }, RestStep = 1.0f, Flies = true },
-                new Creature { Id = "lion_head", Title = L.T("Голова льва"), DefaultStyle = MoveStyle.Float },
-                new Creature { Id = "elephant", Title = L.T("Слонёнок"), DefaultStyle = MoveStyle.Run, RunFrames = 6, RestSeq = new[] { 1, 1, 0, 1 }, RestStep = 1.1f },
-                new Creature { Id = "panda", Title = L.T("Панда-мастер"), DefaultStyle = MoveStyle.Run, RunFrames = 6, RestSeq = new[] { 0, 0, 1, 2, 3, 4, 3, 4, 3, 4, 1 }, RestStep = 0.34f },
-                new Creature { Id = "cloud_rain", Title = L.T("Облако с дождём"), DefaultStyle = MoveStyle.Float },
-                new Creature { Id = "cloud_snow", Title = L.T("Облако со снегом"), DefaultStyle = MoveStyle.Float },
-                new Creature { Id = "sun", Title = L.T("Солнце"), DefaultStyle = MoveStyle.Float },
-                new Creature { Id = "moon", Title = L.T("Луна"), DefaultStyle = MoveStyle.Float },
-                new Creature { Id = "flag", Title = L.T("Флаг"), DefaultStyle = MoveStyle.Wave },
+                new Creature { Id = "butterfly", Title = L.T("Бабочка"), DefaultStyle = MoveStyle.Fly, Category = "insects", Desc = "Порхает за мышью и оставляет волшебную пыльцу" },
+                new Creature { Id = "beetle", Title = L.T("Жук"), DefaultStyle = MoveStyle.Crawl, Category = "insects", Desc = "Деловито ползает и покачивается на ходу" },
+                new Creature { Id = "spider", Title = L.T("Паук"), DefaultStyle = MoveStyle.Crawl, Category = "insects", Desc = "Быстро перебирает лапками" },
+                new Creature { Id = "snail", Title = L.T("Улитка"), DefaultStyle = MoveStyle.Slide, Category = "insects", Desc = "Медленно, но верно ползёт к курсору" },
+                new Creature { Id = "ninja", Title = L.T("Ниндзя"), DefaultStyle = MoveStyle.Run, Category = "heroes", Desc = "Бежит с мечом, в покое медитирует на «Пуске»" },
+                new Creature { Id = "hand", Title = L.T("Рука-помощница"), DefaultStyle = MoveStyle.Run, Category = "heroes", Desc = "Бегает на кончиках пальцев" },
+                new Creature { Id = "luchador", Title = L.T("Лучадор «Бабочка»"), DefaultStyle = MoveStyle.Run, Category = "heroes", Desc = "Рестлер в маске, в покое играет мышцами" },
+                new Creature { Id = "dragon", Title = L.T("Дракон"), DefaultStyle = MoveStyle.Run, RunFrames = 6, RestSeq = new[] { 0, 1 }, RestStep = 1.0f, Flies = true, Category = "fantasy", Desc = "Летает и машет крыльями, в покое спит калачиком" },
+                new Creature { Id = "lion_head", Title = L.T("Голова льва"), DefaultStyle = MoveStyle.Float, Category = "animals", Desc = "Парит рядом, моргает и иногда рычит" },
+                new Creature { Id = "elephant", Title = L.T("Слонёнок"), DefaultStyle = MoveStyle.Run, RunFrames = 6, RestSeq = new[] { 1, 1, 0, 1 }, RestStep = 1.1f, Category = "animals", Desc = "Топает и играет хоботом" },
+                new Creature { Id = "panda", Title = L.T("Панда-мастер"), DefaultStyle = MoveStyle.Run, RunFrames = 6, RestSeq = new[] { 0, 0, 1, 2, 3, 4, 3, 4, 3, 4, 1 }, RestStep = 0.34f, Category = "animals", Desc = "Ходит вразвалку, в покое ест бамбук" },
+                new Creature { Id = "cloud_rain", Title = L.T("Облако с дождём"), DefaultStyle = MoveStyle.Float, Category = "weather", Desc = "Летает за мышью и поливает дождиком" },
+                new Creature { Id = "cloud_snow", Title = L.T("Облако со снегом"), DefaultStyle = MoveStyle.Float, Category = "weather", Desc = "Тихо сыплет снежинки" },
+                new Creature { Id = "sun", Title = L.T("Солнце"), DefaultStyle = MoveStyle.Float, Category = "weather", Desc = "Светит и медленно вращает лучами" },
+                new Creature { Id = "moon", Title = L.T("Луна"), DefaultStyle = MoveStyle.Float, Category = "weather", Desc = "Полумесяц, вокруг мерцают звёзды" },
+                new Creature { Id = "flag", Title = L.T("Флаг"), DefaultStyle = MoveStyle.Wave, Category = "flags", Desc = "Флаг вашей страны развевается на ветру" },
             };
             Importer.ConvertPending();      // JPGs dropped into the folder become PNGs first
             try
@@ -144,7 +146,7 @@ namespace ButterflyCursor
 
         public static string CreatureId, Lang = "", FlagCode;
         public static int Size, Speed, IdleSec, DustAmount, DustSize, DustLife, DustBright, Aura, AuraRgb;
-        public static bool GoHome, Dust, HideFullscreen, Rainbow, ClickFx, Seasons, Music, NightGlow;
+        public static bool GoHome, Dust, HideFullscreen, Rainbow, ClickFx, Seasons, Music, NightGlow, DarkTheme;
         /// <summary>Dust colours chosen by the user (0xRRGGBB); ignored while Rainbow is on.</summary>
         public static List<int> Colors = new List<int>();
         public const int MaxColors = 12;
@@ -199,6 +201,7 @@ namespace ButterflyCursor
         {
             Defaults();
             CreatureId = "butterfly";
+            DarkTheme = Theme.SystemPrefersDark();
             try { Load2(); } catch { }
             if (FlagCode == null || !Flags.Codes.Contains(FlagCode)) FlagCode = Flags.DefaultCode;
         }
@@ -223,6 +226,7 @@ namespace ButterflyCursor
                     Seasons = Int(k, "Seasons", 1, 0, 1) == 1;
                     Music = Int(k, "Music", 0, 0, 1) == 1;
                     NightGlow = Int(k, "NightGlow", 0, 0, 1) == 1;
+                    if (k.GetValue("DarkTheme") != null) DarkTheme = Int(k, "DarkTheme", 0, 0, 1) == 1;
                     DustAmount = Int(k, "DustAmount", DustAmount, 0, 100);
                     DustSize = Int(k, "DustSize", DustSize, 0, 100);
                     DustLife = Int(k, "DustLife", DustLife, 0, 100);
@@ -278,6 +282,7 @@ namespace ButterflyCursor
                     k.SetValue("HideFullscreen", HideFullscreen ? 1 : 0);
                     k.SetValue("ClickFx", ClickFx ? 1 : 0); k.SetValue("Seasons", Seasons ? 1 : 0);
                     k.SetValue("Music", Music ? 1 : 0); k.SetValue("NightGlow", NightGlow ? 1 : 0);
+                    k.SetValue("DarkTheme", DarkTheme ? 1 : 0);
                     k.SetValue("DustAmount", DustAmount); k.SetValue("DustSize", DustSize);
                     k.SetValue("DustLife", DustLife); k.SetValue("DustBright", DustBright);
                     k.SetValue("Aura", Aura); k.SetValue("AuraRgb", AuraRgb); k.SetValue("Rainbow", Rainbow ? 1 : 0);

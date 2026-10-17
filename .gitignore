@@ -13,3 +13,6 @@ src/butterfly2.png
 
 # release files
 dist/
+
+# design mock-ups
+docs/mockups/

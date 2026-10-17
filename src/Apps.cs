@@ -244,6 +244,7 @@ namespace ButterflyCursor
             CancelButton = close;
 
             Fill();
+            Theme.Apply(this);
         }
 
         void Fill()

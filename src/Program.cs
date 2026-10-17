@@ -271,6 +271,7 @@ namespace ButterflyCursor
             return a;
         }
         string loadedId, shownLang;
+        bool shownDark;
         MoveStyle style;
         int S;
 
@@ -396,10 +397,11 @@ namespace ButterflyCursor
             style = Cfg.StyleOf(c);
             resting = false;
 
-            if (shownLang != L.Code)
+            if (shownLang != L.Code || shownDark != Cfg.DarkTheme)
             {
                 bool first = shownLang == null;
                 shownLang = L.Code;
+                shownDark = Cfg.DarkTheme;
                 if (!first)
                 {
                     // language switched: rebuild the menus and reopen the settings window in it
