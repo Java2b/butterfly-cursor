@@ -61,6 +61,11 @@ namespace ButterflyCursor
     {
         public string Id, Title, File;
         public MoveStyle DefaultStyle;
+        // frame strips: how many frames are the run / flight cycle; the rest is a looping resting animation
+        public int RunFrames;
+        public int[] RestSeq;              // order of the resting frames (counted from the first one after the run cycle)
+        public float RestStep = 0.8f;      // seconds per resting frame
+        public bool Flies;                 // side-view frames, but it flies (hovers, keeps flapping)
 
         public Bitmap Load()
         {
@@ -103,6 +108,10 @@ namespace ButterflyCursor
                 new Creature { Id = "ninja", Title = L.T("Ниндзя"), DefaultStyle = MoveStyle.Run },
                 new Creature { Id = "hand", Title = L.T("Рука-помощница"), DefaultStyle = MoveStyle.Run },
                 new Creature { Id = "luchador", Title = L.T("Лучадор «Бабочка»"), DefaultStyle = MoveStyle.Run },
+                new Creature { Id = "dragon", Title = L.T("Дракон"), DefaultStyle = MoveStyle.Run, RunFrames = 6, RestSeq = new[] { 0, 1 }, RestStep = 1.0f, Flies = true },
+                new Creature { Id = "lion_head", Title = L.T("Голова льва"), DefaultStyle = MoveStyle.Float },
+                new Creature { Id = "elephant", Title = L.T("Слонёнок"), DefaultStyle = MoveStyle.Run, RunFrames = 6, RestSeq = new[] { 1, 1, 0, 1 }, RestStep = 1.1f },
+                new Creature { Id = "panda", Title = L.T("Панда-мастер"), DefaultStyle = MoveStyle.Run, RunFrames = 6, RestSeq = new[] { 0, 0, 1, 2, 3, 4, 3, 4, 3, 4, 1 }, RestStep = 0.34f },
                 new Creature { Id = "cloud_rain", Title = L.T("Облако с дождём"), DefaultStyle = MoveStyle.Float },
                 new Creature { Id = "cloud_snow", Title = L.T("Облако со снегом"), DefaultStyle = MoveStyle.Float },
                 new Creature { Id = "sun", Title = L.T("Солнце"), DefaultStyle = MoveStyle.Float },

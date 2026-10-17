@@ -251,6 +251,14 @@ namespace ButterflyCursor
         Bitmap source, sprite;
         Bitmap[] frames = new Bitmap[0];   // animation frames (a strip picture); frames[0] == sprite
         int runFrames = 1, idleFrame;
+        int[] restSeq;                     // resting animation (panda eating, dragon sleeping…)
+        float restStep = 0.8f, restBottom = 1f;
+        bool flies;
+        double restSince;
+        // lion head: blinking and roaring
+        float roarT, blinkT;
+        double nextRoar = 8, nextBlink = 3;
+        int headFrame;
         RectangleF content;                // visible part of the sprite, for the flag pole
         Bitmap sitSprite;                  // resting pose (the ninja sitting on Start), if the creature has one
         Bitmap raysSprite;                 // the sun's rays, drawn turning behind it
@@ -409,6 +417,13 @@ namespace ButterflyCursor
             int n = Creature.IsStrip(source.Width, source.Height) ? source.Width / source.Height : 1;
             idleFrame = n >= 3 && n % 2 == 1 ? n - 1 : 0;
             runFrames = idleFrame > 0 ? n - 1 : n;
+            restSeq = null; flies = c.Flies; restStep = c.RestStep;
+            if (c.RunFrames > 0 && c.RunFrames < n)
+            {
+                runFrames = c.RunFrames;
+                idleFrame = runFrames;
+                restSeq = c.RestSeq;
+            }
             foreach (Bitmap old in frames) old.Dispose();
             frames = new Bitmap[n];
             int fw = source.Width / n;
@@ -428,6 +443,8 @@ namespace ButterflyCursor
                 frames[i] = b;
             }
             sprite = frames[0];
+            // where the feet are in the resting picture, so it stands exactly on the taskbar
+            restBottom = BottomOf(frames[Math.Min(frames.Length - 1, restSeq != null ? runFrames + restSeq[0] : idleFrame)]);
 
             if (raysSprite != null) { raysSprite.Dispose(); raysSprite = null; }
             if (c.Id == "sun")
@@ -461,6 +478,24 @@ namespace ButterflyCursor
                 foreach (Bitmap bmp in glow.Values) bmp.Dispose();
                 glow.Clear();
             }
+        }
+
+        /// <summary>Lowest visible row of a sprite, as a fraction of its height.</summary>
+        static float BottomOf(Bitmap b)
+        {
+            BitmapData bd = b.LockBits(new Rectangle(0, 0, b.Width, b.Height), ImageLockMode.ReadOnly, PixelFormat.Format32bppPArgb);
+            try
+            {
+                var row = new byte[b.Width * 4];
+                for (int y = b.Height - 1; y >= 0; y--)
+                {
+                    Marshal.Copy(new IntPtr(bd.Scan0.ToInt64() + (long)y * bd.Stride), row, 0, row.Length);
+                    for (int x = 3; x < row.Length; x += 4)
+                        if (row[x] > 120) return (y + 1f) / b.Height;
+                }
+                return 1f;
+            }
+            finally { b.UnlockBits(bd); }
         }
 
         // Glow sprites are pre-rendered per colour / brightness / pixel size so that drawing
@@ -621,7 +656,7 @@ namespace ButterflyCursor
             {
                 // side-view creatures stand on the taskbar edge; the others sit on it
                 float lift = style == MoveStyle.Slide ? 0.30f : style == MoveStyle.Float ? 0.40f
-                           : style == MoveStyle.Run ? 0.46f : style == MoveStyle.Wave ? 0.48f : 0.12f;
+                           : style == MoveStyle.Run ? Math.Max(0.1f, restBottom - 0.5f - 0.02f) : style == MoveStyle.Wave ? 0.48f : 0.12f;
                 if (left) p = new PointF(s.Right + S * 0.5f, s.Top + s.Height / 2f);
                 else if (right) p = new PointF(s.Left - S * 0.5f, s.Top + s.Height / 2f);
                 else if (top) p = new PointF(s.Left + s.Width * 0.25f, s.Bottom + S * lift);
@@ -766,6 +801,28 @@ namespace ButterflyCursor
             }
         }
 
+        /// <summary>The dragon breathes fire, the elephant sprays water from its trunk.</summary>
+        void Spray(double now, bool fire)
+        {
+            float k = S * scale;
+            float mx = px + facing * k * (fire ? 0.32f : 0.27f), my = py + k * (fire ? -0.12f : 0.18f);
+            int[] fireCols = { 0xFFD24A, 0xFF9A2E, 0xFF5A1F, 0xFFF1A0 };
+            int[] waterCols = { 0x9FD8FF, 0xD8F1FF, 0x6FBFFF };
+            for (int i = 0; i < 34 && particles.Count < 700; i++)
+            {
+                var p = new Particle();
+                p.X = mx; p.Y = my;
+                float v = Rand(380f, 720f) * dpi;
+                p.Vx = facing * v;
+                p.Vy = fire ? Rand(-90f, 90f) * dpi : Rand(-420f, -160f) * dpi;   // water goes up in an arc
+                p.MaxLife = p.Life = Rand(0.35f, 0.75f);
+                p.Size = Rand(2.2f, 4f) * dpi;
+                p.Phase = Rand(0, 6.28f);
+                p.Rgb = fire ? fireCols[rnd.Next(fireCols.Length)] : waterCols[rnd.Next(waterCols.Length)];
+                particles.Add(p);
+            }
+        }
+
         /// <summary>Clicks, the two easter eggs and the music meter.</summary>
         void UpdateFun(Native.POINT cur, double now, float dt)
         {
@@ -779,7 +836,10 @@ namespace ButterflyCursor
             if (clicked && visible && Cfg.ClickFx)
             {
                 Burst(cur.X, cur.Y, 18, now);
-                if (sitSprite != null && !resting)
+                if (loadedId == "dragon") Spray(now, true);
+                else if (loadedId == "elephant") Spray(now, false);
+                else if (loadedId == "lion_head") roarT = 1.3f;
+                else if (sitSprite != null && !resting)
                 {
                     // the ninja throws a shuriken at the spot
                     float sx = px, sy = py - S * 0.1f, ddx = cur.X - sx, ddy = cur.Y - sy;
@@ -974,7 +1034,7 @@ namespace ButterflyCursor
             wasIdle = idle;
 
             // speed setting 1..10; crawlers are slower than fliers, the snail is much slower
-            float styleK = style == MoveStyle.Crawl ? 0.65f : style == MoveStyle.Slide ? 0.2f : style == MoveStyle.Run ? 0.85f : 1f;
+            float styleK = style == MoveStyle.Crawl ? 0.65f : style == MoveStyle.Slide ? 0.2f : style == MoveStyle.Run && !flies ? 0.85f : 1f;
             float maxSpeed = 180f * Cfg.Speed * dpi * styleK;
             float arrive = 2f + 0.6f * Cfg.Speed;
 
@@ -1016,7 +1076,7 @@ namespace ButterflyCursor
                 if (sideY > 0 && cur.Y + oy + room > wa.Bottom) sideY = -1f;
                 else if (sideY < 0 && cur.Y + oy + room * 1.6f < wa.Bottom) sideY = 1f;
                 tx = cur.X + ox * sideX; ty = cur.Y + oy * sideY;
-                if (style == MoveStyle.Fly || style == MoveStyle.Float || style == MoveStyle.Wave)
+                if (style == MoveStyle.Fly || style == MoveStyle.Float || style == MoveStyle.Wave || flies)
                 {
                     tx += (float)Math.Sin(t * 1.7f) * S * 0.22f;
                     ty += (float)Math.Sin(t * 2.3f + 1f) * S * 0.18f;
@@ -1081,7 +1141,7 @@ namespace ButterflyCursor
             if (style == MoveStyle.Fly) freq = resting || riding ? 0.33f : 5f + 5f * moving + 6f * level;
             else if (style == MoveStyle.Crawl) freq = 6.5f * moving;
             else if (style == MoveStyle.Float) freq = resting ? 0f : 0.9f;
-            else if (style == MoveStyle.Run) freq = 2.6f * moving;              // full run cycles per second
+            else if (style == MoveStyle.Run) freq = flies ? 1.7f : 2.6f * moving;   // full run (or wing) cycles per second
             else if (style == MoveStyle.Wave) freq = 0.8f + 1.4f * moving;
             else freq = 1.6f * moving;
             phase += dt * freq * 6.2832f;
@@ -1144,7 +1204,16 @@ namespace ButterflyCursor
                 p.X += p.Vx * dt; p.Y += p.Vy * dt;
             }
 
-            bool busy = raysSprite != null || shots.Count > 0 || hopT > 0 || flipT > 0 || beat > 0 || level > 0.02f || dizzyT > 0;
+            if (!resting) restSince = now;
+            if (loadedId == "lion_head")
+            {
+                if (roarT > 0) roarT = Math.Max(0, roarT - dt);
+                else if (now > nextRoar) { roarT = 1.3f; nextRoar = now + Rand(10f, 18f); }
+                if (blinkT > 0) blinkT = Math.Max(0, blinkT - dt);
+                else if (now > nextBlink) { blinkT = 0.16f; nextBlink = now + Rand(2.5f, 5f); }
+                headFrame = roarT > 0 ? 2 : blinkT > 0 ? 1 : 0;
+            }
+            bool busy = roarT > 0 || blinkT > 0 || (restSeq != null && resting) || raysSprite != null || shots.Count > 0 || hopT > 0 || flipT > 0 || beat > 0 || level > 0.02f || dizzyT > 0;
             // full 60 fps only while something moves fast; resting with a few slow particles needs much less
             frameInterval = speed >= 1f || busy ? 1f / 60f : particles.Count == 0 ? 0.05f : 1f / 30f;
             Render(t);
@@ -1356,14 +1425,23 @@ namespace ButterflyCursor
                     g.Restore(rs);
                 }
                 g.RotateTransform(angle);
-                g.DrawImage(sprite, -half, -half, S, S);
+                if (roarT > 0) g.RotateTransform(5f * (float)Math.Sin(clock.Elapsed.TotalSeconds * 45));   // mane shakes while roaring
+                Bitmap pic = headFrame > 0 && headFrame < frames.Length ? frames[headFrame] : sprite;
+                g.DrawImage(pic, -half, -half, S, S);
             }
             else if (style == MoveStyle.Run)
             {
                 // side view, frame-by-frame run cycle; the idle pose when standing still
                 int idx = idleFrame;
-                if (moving > 0.12f && runFrames > 0)
+                if (resting && restSeq != null && restSeq.Length > 0)
+                {
+                    // resting animation: the panda eats bamboo, the dragon sleeps, the elephant plays with its trunk
+                    int step = (int)((clock.Elapsed.TotalSeconds - restSince) / restStep) % restSeq.Length;
+                    idx = runFrames + restSeq[step];
+                }
+                else if ((moving > 0.12f || flies) && runFrames > 0)
                     idx = ((int)(phase / 6.2832f * runFrames) % runFrames + runFrames) % runFrames;
+                else if (restSeq != null) idx = 0;              // standing still near the pointer
                 g.TranslateTransform(px, py);
                 g.ScaleTransform(scale, scale);
                 ApplyFun(g);

@@ -96,6 +96,11 @@ namespace ButterflyCursor
 
             { "Лучадор «Бабочка»", new[] { "Luchador “Mariposa”", "Luchador «Kapalak»" } },
 
+            { "Дракон", new[] { "Dragon", "Ajdaho" } },
+            { "Голова льва", new[] { "Lion head", "Sher boshi" } },
+            { "Слонёнок", new[] { "Baby elephant", "Fil bolasi" } },
+            { "Панда-мастер", new[] { "Panda master", "Panda usta" } },
+
             // behaviour
             { "Поведение", new[] { "Behaviour", "Xatti-harakat" } },
             { "Скорость", new[] { "Speed", "Tezlik" } },
