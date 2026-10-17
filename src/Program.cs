@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Drawing;
@@ -301,6 +301,7 @@ namespace ButterflyCursor
         double last, lastMove, lastTopmost, lastStartLookup = -1000;
         Native.POINT lastCursor;
         float emitCarry, seasonCarry, weatherCarry;
+        float sideX = 1f, sideY = 1f;      // which side of the pointer the creature follows on
 
         readonly object perchLock = new object();
         Dictionary<string, Rectangle> startRects = new Dictionary<string, Rectangle>();
@@ -1006,13 +1007,23 @@ namespace ButterflyCursor
             }
             else
             {
-                // stay beside the pointer, not on top of it; fliers also hover around a little
-                tx = cur.X + S * 0.62f; ty = cur.Y + S * 0.55f;
+                // stay beside the pointer, not on top of it: normally below-right of it, but near the
+                // bottom or right edge of the screen it moves to the other side so it never disappears
+                Rectangle wa = Screen.FromPoint(new Point(cur.X, cur.Y)).WorkingArea;
+                float ox = S * 0.62f, oy = S * 0.55f, room = S * 0.75f;
+                if (sideX > 0 && cur.X + ox + room > wa.Right) sideX = -1f;
+                else if (sideX < 0 && cur.X + ox + room * 1.6f < wa.Right) sideX = 1f;
+                if (sideY > 0 && cur.Y + oy + room > wa.Bottom) sideY = -1f;
+                else if (sideY < 0 && cur.Y + oy + room * 1.6f < wa.Bottom) sideY = 1f;
+                tx = cur.X + ox * sideX; ty = cur.Y + oy * sideY;
                 if (style == MoveStyle.Fly || style == MoveStyle.Float || style == MoveStyle.Wave)
                 {
                     tx += (float)Math.Sin(t * 1.7f) * S * 0.22f;
                     ty += (float)Math.Sin(t * 2.3f + 1f) * S * 0.18f;
                 }
+                float h = S * 0.5f;
+                tx = Math.Max(wa.Left + h, Math.Min(wa.Right - h, tx));
+                ty = Math.Max(wa.Top + h, Math.Min(wa.Bottom - h, ty));
                 resting = false;
             }
             scale += (wantScale - scale) * Math.Min(1f, dt * 3f);
