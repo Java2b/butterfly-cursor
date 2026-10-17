@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Drawing;
@@ -85,6 +85,7 @@ namespace ButterflyCursor
         [DllImport("user32.dll")] public static extern bool SetProcessDPIAware();
         [DllImport("user32.dll")] public static extern bool GetCursorPos(out POINT p);
         [DllImport("user32.dll")] public static extern short GetAsyncKeyState(int vk);
+        [DllImport("dwmapi.dll")] public static extern int DwmFlush();
         [DllImport("user32.dll")] public static extern IntPtr GetForegroundWindow();
         [DllImport("user32.dll")] public static extern int GetWindowLong(IntPtr hwnd, int index);
         [DllImport("user32.dll")] public static extern uint GetWindowThreadProcessId(IntPtr hwnd, out uint pid);
@@ -238,7 +239,6 @@ namespace ButterflyCursor
         public const string WindowTitle = "ButterflyCursor.Overlay";   // how a second copy finds this one
 
         readonly Surface surface = new Surface();
-        readonly System.Windows.Forms.Timer timer = new System.Windows.Forms.Timer();
         readonly Stopwatch clock = Stopwatch.StartNew();
         readonly Random rnd = new Random();
         readonly List<Particle> particles = new List<Particle>();
@@ -253,6 +253,7 @@ namespace ButterflyCursor
         int runFrames = 1, idleFrame;
         RectangleF content;                // visible part of the sprite, for the flag pole
         Bitmap sitSprite;                  // resting pose (the ninja sitting on Start), if the creature has one
+        Bitmap raysSprite;                 // the sun's rays, drawn turning behind it
         static readonly ImageAttributes clampEdges = MakeClamp();
 
         static ImageAttributes MakeClamp()
@@ -299,7 +300,7 @@ namespace ButterflyCursor
         double lastFullscreenCheck;
         double last, lastMove, lastTopmost, lastStartLookup = -1000;
         Native.POINT lastCursor;
-        float emitCarry;
+        float emitCarry, seasonCarry, weatherCarry;
 
         readonly object perchLock = new object();
         Dictionary<string, Rectangle> startRects = new Dictionary<string, Rectangle>();
@@ -325,18 +326,14 @@ namespace ButterflyCursor
             px = lastCursor.X; py = lastCursor.Y;
             last = lastMove = clock.Elapsed.TotalSeconds;
 
-            timer.Interval = 15;
-            // a drawing glitch must never turn into an error window on the user's screen
-            timer.Tick += delegate
+            // Frames are paced by the screen refresh on a helper thread and run on the UI thread as posted
+            // messages. A WinForms timer only fires when nothing else is queued and ticks unevenly
+            // (15/31 ms), which made the creature judder, especially while the settings window was busy.
+            HandleCreated += delegate
             {
-                try { Frame(); }
-                catch (Exception ex)
-                {
-                    if (Environment.GetEnvironmentVariable("BUTTERFLY_DEBUG") == "1")
-                        try { System.IO.File.AppendAllText(System.IO.Path.Combine(System.IO.Path.GetTempPath(), "butterfly-debug.txt"), ex + Environment.NewLine); } catch { }
-                }
+                var pump = new Thread(PumpFrames) { IsBackground = true, Name = "frames" };
+                pump.Start();
             };
-            timer.Start();
 
             if (Array.IndexOf(Environment.GetCommandLineArgs(), "--settings") >= 0)
                 Shown += delegate { ShowSettings(); };
@@ -365,7 +362,7 @@ namespace ButterflyCursor
 
         protected override void OnFormClosed(FormClosedEventArgs e)
         {
-            timer.Stop();
+            closing = true;
             if (tray != null) { tray.Visible = false; tray.Dispose(); }
             surface.Dispose();
             base.OnFormClosed(e);
@@ -430,6 +427,19 @@ namespace ButterflyCursor
                 frames[i] = b;
             }
             sprite = frames[0];
+
+            if (raysSprite != null) { raysSprite.Dispose(); raysSprite = null; }
+            if (c.Id == "sun")
+                using (System.IO.Stream st = System.Reflection.Assembly.GetExecutingAssembly().GetManifestResourceStream("sun_rays.png"))
+                using (var rays = new Bitmap(st))
+                {
+                    raysSprite = new Bitmap(S, S, PixelFormat.Format32bppPArgb);
+                    using (Graphics g = Graphics.FromImage(raysSprite))
+                    {
+                        g.InterpolationMode = InterpolationMode.HighQualityBicubic;
+                        g.DrawImage(rays, 0, 0, S, S);
+                    }
+                }
 
             if (sitSprite != null) { sitSprite.Dispose(); sitSprite = null; }
             if (c.Id == "ninja")
@@ -657,7 +667,7 @@ namespace ButterflyCursor
 
         float Rand(float a, float b) { return a + (float)rnd.NextDouble() * (b - a); }
 
-        void Emit(float x, float y, float bvx, float bvy, double now)
+        void Emit(float x, float y, float bvx, float bvy, double now, bool seasonal = false)
         {
             if (particles.Count >= 700) return;
             float sizeK = 0.4f + Cfg.DustSize / 50f * 0.6f, lifeK = 0.4f + Cfg.DustLife / 50f * 0.6f;
@@ -671,7 +681,7 @@ namespace ButterflyCursor
             p.Phase = Rand(0, 6.28f);
             p.Rgb = Cfg.DustColor(rnd, now).ToArgb() & 0xFFFFFF;
             p.Star = rnd.Next(4) == 0;
-            if (Cfg.Seasons && seasonFx.Length > 0 && rnd.Next(10) < 4)
+            if (seasonal)
             {
                 // snowflakes, leaves, petals, confetti, pumpkins: bigger, slower, tumbling
                 p.Kind = seasonFx[rnd.Next(seasonFx.Length)];
@@ -683,6 +693,57 @@ namespace ButterflyCursor
                 p.Rgb = rnd.Next(SeasonSprites.Variants);
             }
             particles.Add(p);
+        }
+
+        /// <summary>Rain or snow under a cloud, twinkling stars around the moon.</summary>
+        void EmitWeather(float dt, double now)
+        {
+            string id = loadedId ?? "";
+            bool rain = id == "cloud_rain", snow = id == "cloud_snow", moon = id == "moon";
+            if (!rain && !snow && !moon) return;
+            float k = scale;
+            weatherCarry += dt * (rain ? 45f : snow ? 14f : 3f) * (dozing ? 0.3f : 1f);
+            while (weatherCarry >= 1f && particles.Count < 700)
+            {
+                weatherCarry -= 1f;
+                var p = new Particle();
+                p.Phase = Rand(0, 6.28f);
+                if (moon)
+                {
+                    // a star blinks somewhere around the moon
+                    float a = Rand(0, 6.2832f), r = S * k * Rand(0.55f, 0.95f);
+                    p.X = px + (float)Math.Cos(a) * r; p.Y = py + (float)Math.Sin(a) * r * 0.8f;
+                    p.MaxLife = p.Life = Rand(0.9f, 1.6f);
+                    p.Size = Rand(1.2f, 2.2f) * dpi;
+                    p.Rgb = rnd.Next(2) == 0 ? 0xFFFFFF : 0xFFF2B0;
+                    p.Star = true;
+                    p.Kind = SeasonFx.Twinkle;
+                }
+                else
+                {
+                    // from the flat bottom of the cloud
+                    p.X = px + Rand(-0.32f, 0.32f) * S * k;
+                    p.Y = py + S * k * 0.19f;
+                    p.Vx = vx * 0.25f;
+                    if (rain)
+                    {
+                        p.Kind = SeasonFx.Rain;
+                        p.Vy = Rand(480f, 600f) * dpi;
+                        p.MaxLife = p.Life = Rand(0.45f, 0.7f);
+                        p.Size = Rand(0.9f, 1.4f) * dpi * Math.Max(0.5f, k);
+                    }
+                    else
+                    {
+                        p.Kind = SeasonFx.Snow;
+                        p.Vy = Rand(30f, 60f) * dpi;
+                        p.MaxLife = p.Life = Rand(1.8f, 2.8f);
+                        p.Size = Rand(3.5f, 6f) * dpi * Math.Max(0.5f, k);
+                        p.Rot = Rand(0, 360); p.Spin = Rand(-90f, 90f);
+                        p.Rgb = rnd.Next(SeasonSprites.Variants);
+                    }
+                }
+                particles.Add(p);
+            }
         }
 
         /// <summary>A ring of sparks flying outwards (clicks, shuriken hits, beats, being scared).</summary>
@@ -742,7 +803,9 @@ namespace ButterflyCursor
             float mx = cur.X - prevCur.X, my = cur.Y - prevCur.Y;
             prevCur = cur;
             float step = (float)Math.Sqrt(mx * mx + my * my);
-            if (step > 4f * dpi && dt > 0)
+            // dragging a slider or a window back and forth is not "shaking" or "circling"
+            if (down) { circleAcc = 0; shakeTimes.Clear(); lastShakeSign = 0; lastMoveAngle = float.NaN; }
+            else if (step > 4f * dpi && dt > 0)
             {
                 float ang = (float)Math.Atan2(my, mx);
                 if (!float.IsNaN(lastMoveAngle))
@@ -770,7 +833,7 @@ namespace ButterflyCursor
                 dizzyT = DizzyLen;
                 circleAcc = 0;
             }
-            if (shakeTimes.Count >= 6 && scaredT <= 0 && visible)
+            if (shakeTimes.Count >= 8 && scaredT <= 0 && visible)
             {
                 // flees to the far side of the screen for a moment
                 Rectangle b = Screen.FromPoint(new Point(cur.X, cur.Y)).Bounds;
@@ -806,9 +869,60 @@ namespace ButterflyCursor
             pulse = 1f + 0.08f * level;
         }
 
+        volatile bool closing;
+        volatile float frameInterval = 1f / 60f;
+        int framePending;
+
+        void PumpFrames()
+        {
+            double lastPost = 0;
+            while (!closing)
+            {
+                double before = clock.Elapsed.TotalSeconds;
+                bool synced = false;
+                try { synced = Native.DwmFlush() == 0; } catch { }
+                double now = clock.Elapsed.TotalSeconds;
+                // no composition (screen off, locked…): fall back to a plain sleep so we never spin
+                if (!synced || now - before < 0.002) Thread.Sleep(8);
+                now = clock.Elapsed.TotalSeconds;
+                if (now - lastPost < frameInterval - 0.004) continue;
+                if (Interlocked.CompareExchange(ref framePending, 1, 0) != 0) continue;   // previous frame still running
+                lastPost = now;
+                try { BeginInvoke((MethodInvoker)RunFrame); }
+                catch { Interlocked.Exchange(ref framePending, 0); }
+            }
+        }
+
+        void RunFrame()
+        {
+            try { Frame(); }
+            catch (Exception ex)
+            {
+                // a drawing glitch must never turn into an error window on the user's screen
+                if (Environment.GetEnvironmentVariable("BUTTERFLY_DEBUG") == "1")
+                    try { System.IO.File.AppendAllText(System.IO.Path.Combine(System.IO.Path.GetTempPath(), "butterfly-debug.txt"), ex + Environment.NewLine); } catch { }
+            }
+            finally { Interlocked.Exchange(ref framePending, 0); }
+        }
+
+        // BUTTERFLY_DEBUG=1: every 5 s writes how even the frame timing was (to %TEMP%utterfly-debug.txt)
+        static readonly bool debug = Environment.GetEnvironmentVariable("BUTTERFLY_DEBUG") == "1";
+        int statFrames; double statMaxGap, statSince;
+
         void Frame()
         {
             double now = clock.Elapsed.TotalSeconds;
+            if (debug)
+            {
+                statFrames++;
+                statMaxGap = Math.Max(statMaxGap, now - last);
+                if (now - statSince > 5)
+                {
+                    try { System.IO.File.AppendAllText(System.IO.Path.Combine(System.IO.Path.GetTempPath(), "butterfly-debug.txt"),
+                        string.Format("frames {0} in {1:0.0}s, longest gap {2:0} ms, particles {3}", statFrames, now - statSince, statMaxGap * 1000, particles.Count) + Environment.NewLine); } catch { }
+                    statFrames = 0; statMaxGap = 0; statSince = now;
+                }
+            }
             float dt = (float)Math.Min(0.05, now - last);
             last = now;
             float t = (float)now;
@@ -827,7 +941,7 @@ namespace ButterflyCursor
                 // a game, a full-screen video or a program from the "hide in" list is in front:
                 // stay out of the way and do nothing
                 particles.Clear();
-                timer.Interval = 250;
+                frameInterval = 0.25f;
                 Render(t);
                 return;
             }
@@ -965,16 +1079,27 @@ namespace ButterflyCursor
                 : 0.56f + 0.44f * (float)Math.Cos(phase);
             wing += (wantWing - wing) * Math.Min(1f, dt * 30f);
 
-            // fairy dust
+            // fairy dust and, separately, the seasonal snow / leaves / petals: each has its own switch
+            float tailX, tailY;
+            if (style == MoveStyle.Slide || style == MoveStyle.Run) { tailX = px - facing * S * 0.3f; tailY = py + S * 0.2f; }
+            else
+            {
+                float rad = angle * (float)Math.PI / 180f;
+                tailX = px - (float)Math.Sin(rad) * S * 0.22f; tailY = py + (float)Math.Cos(rad) * S * 0.22f;
+            }
+            if (!paused && !dozing && Cfg.Seasons && seasonFx.Length > 0)
+            {
+                seasonCarry += moved / (22f * dpi) + dt * (resting ? 0.3f : 2f);
+                while (seasonCarry >= 1f)
+                {
+                    seasonCarry -= 1f;
+                    if (speed < 1f) Emit(px + Rand(-1, 1) * S * 0.4f, py - S * 0.3f, 0, 0, now, true);
+                    else Emit(tailX, tailY, -vx, -vy, now, true);
+                }
+            }
+            if (!paused && !fullscreen) EmitWeather(dt, now);
             if (!paused && !dozing && Cfg.Dust && Cfg.DustAmount > 0)
             {
-                float tailX, tailY;
-                if (style == MoveStyle.Slide || style == MoveStyle.Run) { tailX = px - facing * S * 0.3f; tailY = py + S * 0.2f; }
-                else
-                {
-                    float rad = angle * (float)Math.PI / 180f;
-                    tailX = px - (float)Math.Sin(rad) * S * 0.22f; tailY = py + (float)Math.Cos(rad) * S * 0.22f;
-                }
                 float amount = Cfg.DustAmount / 50f;
                 float still = resting ? 0.8f : (style == MoveStyle.Fly || style == MoveStyle.Float || style == MoveStyle.Wave ? 5f : 0.8f);
                 emitCarry += (moved / (6f * dpi) + dt * still) * amount;
@@ -991,6 +1116,8 @@ namespace ButterflyCursor
                 Particle p = particles[i];
                 p.Life -= dt;
                 if (p.Life <= 0) { particles.RemoveAt(i); continue; }
+                if (p.Kind == SeasonFx.Rain) { p.X += p.Vx * dt; p.Y += p.Vy * dt; continue; }
+                if (p.Kind == SeasonFx.Twinkle) continue;      // stays where it appeared, only blinks
                 if (p.Kind == SeasonFx.None)
                 {
                     p.Vy += 38f * dpi * dt;
@@ -1006,8 +1133,9 @@ namespace ButterflyCursor
                 p.X += p.Vx * dt; p.Y += p.Vy * dt;
             }
 
-            bool busy = shots.Count > 0 || hopT > 0 || flipT > 0 || beat > 0 || level > 0.02f || dizzyT > 0;
-            timer.Interval = speed < 1f && !busy ? 40 : 15;
+            bool busy = raysSprite != null || shots.Count > 0 || hopT > 0 || flipT > 0 || beat > 0 || level > 0.02f || dizzyT > 0;
+            // full 60 fps only while something moves fast; resting with a few slow particles needs much less
+            frameInterval = speed >= 1f || busy ? 1f / 60f : particles.Count == 0 ? 0.05f : 1f / 30f;
             Render(t);
         }
 
@@ -1140,7 +1268,14 @@ namespace ButterflyCursor
             float f = p.Life / p.MaxLife;
             float fade = f < 0.7f ? f / 0.7f : 1f;
             float twinkle = 0.72f + 0.28f * (float)Math.Sin(p.Phase + t * 17f);
-            if (p.Kind != SeasonFx.None) { DrawSeasonal(g, p); return; }
+            if (p.Kind == SeasonFx.Rain)
+            {
+                float fr = p.Life / p.MaxLife, len = p.Vy * 0.028f;
+                using (var pen = new Pen(Color.FromArgb((int)(200 * Math.Min(1f, fr * 3f)), 160, 210, 255), Math.Max(1f, p.Size)))
+                    g.DrawLine(pen, p.X, p.Y, p.X - p.Vx * 0.028f, p.Y - len);
+                return;
+            }
+            if (p.Kind != SeasonFx.None && p.Kind != SeasonFx.Twinkle) { DrawSeasonal(g, p); return; }
             float a = Math.Min(1f, fade * twinkle * Cfg.DustBright / 100f * (NightNow ? 1.25f : 1f));
             int lv = (int)(a * GlowLevels + 0.5f);
             if (lv < 1) return;
@@ -1199,6 +1334,16 @@ namespace ButterflyCursor
                 g.TranslateTransform(px, py + (float)Math.Sin(phase) * S * 0.05f);
                 g.ScaleTransform(scale, scale);
                 ApplyFun(g);
+                if (raysSprite != null)
+                {
+                    // the sun's rays turn slowly and breathe
+                    GraphicsState rs = g.Save();
+                    float breathe = 1f + 0.05f * (float)Math.Sin(clock.Elapsed.TotalSeconds * 1.7);
+                    g.RotateTransform((float)(clock.Elapsed.TotalSeconds * 12 % 360));
+                    g.ScaleTransform(breathe, breathe);
+                    g.DrawImage(raysSprite, -half, -half, S, S);
+                    g.Restore(rs);
+                }
                 g.RotateTransform(angle);
                 g.DrawImage(sprite, -half, -half, S, S);
             }

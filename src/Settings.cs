@@ -102,6 +102,10 @@ namespace ButterflyCursor
                 new Creature { Id = "snail", Title = L.T("Улитка"), DefaultStyle = MoveStyle.Slide },
                 new Creature { Id = "ninja", Title = L.T("Ниндзя"), DefaultStyle = MoveStyle.Run },
                 new Creature { Id = "hand", Title = L.T("Рука-помощница"), DefaultStyle = MoveStyle.Run },
+                new Creature { Id = "cloud_rain", Title = L.T("Облако с дождём"), DefaultStyle = MoveStyle.Float },
+                new Creature { Id = "cloud_snow", Title = L.T("Облако со снегом"), DefaultStyle = MoveStyle.Float },
+                new Creature { Id = "sun", Title = L.T("Солнце"), DefaultStyle = MoveStyle.Float },
+                new Creature { Id = "moon", Title = L.T("Луна"), DefaultStyle = MoveStyle.Float },
                 new Creature { Id = "flag", Title = L.T("Флаг"), DefaultStyle = MoveStyle.Wave },
             };
             Importer.ConvertPending();      // JPGs dropped into the folder become PNGs first
@@ -176,7 +180,7 @@ namespace ButterflyCursor
         public static void Defaults()
         {
             Size = 76; Speed = 5; IdleSec = 4; GoHome = true; HideFullscreen = true;
-            ClickFx = true; Seasons = true; Music = true; NightGlow = true;
+            ClickFx = false; Seasons = true; Music = false; NightGlow = false;
             Dust = true; DustAmount = 50; DustSize = 50; DustLife = 50; DustBright = 100;
             Colors = Preset(0); Rainbow = false; Aura = 0; AuraRgb = 0x78DCFF;
         }
@@ -205,10 +209,10 @@ namespace ButterflyCursor
                     GoHome = Int(k, "GoHome", 1, 0, 1) == 1;
                     Dust = Int(k, "Dust", 1, 0, 1) == 1;
                     HideFullscreen = Int(k, "HideFullscreen", 1, 0, 1) == 1;
-                    ClickFx = Int(k, "ClickFx", 1, 0, 1) == 1;
+                    ClickFx = Int(k, "ClickFx", 0, 0, 1) == 1;
                     Seasons = Int(k, "Seasons", 1, 0, 1) == 1;
-                    Music = Int(k, "Music", 1, 0, 1) == 1;
-                    NightGlow = Int(k, "NightGlow", 1, 0, 1) == 1;
+                    Music = Int(k, "Music", 0, 0, 1) == 1;
+                    NightGlow = Int(k, "NightGlow", 0, 0, 1) == 1;
                     DustAmount = Int(k, "DustAmount", DustAmount, 0, 100);
                     DustSize = Int(k, "DustSize", DustSize, 0, 100);
                     DustLife = Int(k, "DustLife", DustLife, 0, 100);

@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Drawing;
 using System.Drawing.Drawing2D;
@@ -70,7 +70,7 @@ namespace ButterflyCursor
 
     // ---------- seasons and holidays ----------
 
-    enum SeasonFx { None = 0, Snow = 1, Confetti = 2, Petals = 3, Leaves = 4, Pumpkins = 5 }
+    enum SeasonFx { None = 0, Snow = 1, Confetti = 2, Petals = 3, Leaves = 4, Pumpkins = 5, Rain = 6, Twinkle = 7 }
 
     static class Season
     {

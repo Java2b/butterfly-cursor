@@ -89,6 +89,11 @@ namespace ButterflyCursor
             { "■ Остановить демонстрацию", new[] { "■ Stop the demo", "■ Namoyishni toʻxtatish" } },
             { "Демонстрация для видео", new[] { "Demo for videos", "Video uchun namoyish" } },
 
+            { "Облако с дождём", new[] { "Rain cloud", "Yomgʻirli bulut" } },
+            { "Облако со снегом", new[] { "Snow cloud", "Qorli bulut" } },
+            { "Солнце", new[] { "Sun", "Quyosh" } },
+            { "Луна", new[] { "Moon", "Oy" } },
+
             // behaviour
             { "Поведение", new[] { "Behaviour", "Xatti-harakat" } },
             { "Скорость", new[] { "Speed", "Tezlik" } },
