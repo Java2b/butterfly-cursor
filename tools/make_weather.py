@@ -34,6 +34,50 @@ def finish(img, glow, path, strength=0.6, radius=40):
     print("saved", path)
 
 
+def cute_cloud(path, top, bottom, line, glow, happy):
+    """A cloud the way children draw it: uneven puffy bumps, a lumpy bottom, thick soft outline and a face."""
+    rng = np.random.RandomState(7 if happy else 3)
+    m = Image.new("L", (N, N), 0)
+    d = ImageDraw.Draw(m)
+    bumps = [(330, 730, 128), (470, 615, 160), (655, 545, 205), (850, 600, 165), (1000, 715, 132),   # top puffs
+             (365, 850, 96), (505, 880, 104), (650, 888, 108), (795, 878, 100), (935, 848, 92)]       # lumpy bottom
+    for cx, cy, r in bumps:
+        d.ellipse((cx - r, cy - r, cx + r, cy + r), fill=255)
+    d.ellipse((300, 560, 1040, 900), fill=255)
+    # hand-drawn wobble: a smooth random field pushes the edge in and out a little
+    noise = Image.fromarray((rng.rand(10, 10) * 255).astype(np.uint8)).resize((N, N), Image.BICUBIC)
+    soft = np.asarray(m.filter(ImageFilter.GaussianBlur(14)), np.float32) + (np.asarray(noise, np.float32) - 128) * 0.55
+    m = Image.fromarray(((soft > 128) * 255).astype(np.uint8)).filter(ImageFilter.GaussianBlur(1.8))
+
+    img = Image.new("RGBA", (N, N), (0, 0, 0, 0))
+    img.alpha_composite(outline(m, line, 16))
+    img.alpha_composite(gradient_fill(m, top, bottom, 380, 960))
+    hl = Image.new("RGBA", (N, N), (255, 255, 255, 0))
+    hd = ImageDraw.Draw(hl)
+    for cx, cy, r in ((610, 470, 95), (430, 580, 60), (845, 545, 70)):
+        hd.ellipse((cx - r, cy - r * 0.6, cx + r, cy + r * 0.6), fill=(255, 255, 255, 150))
+    img.alpha_composite(Image.composite(hl.filter(ImageFilter.GaussianBlur(20)), Image.new("RGBA", (N, N)), m))
+
+    # face
+    f = ImageDraw.Draw(img)
+    ink = (52, 48, 70)
+    if happy:
+        for ex in (575, 765):
+            f.ellipse((ex - 20, 718, ex + 20, 768), fill=ink)
+            f.ellipse((ex - 8, 728, ex + 4, 742), fill=(255, 255, 255))
+        f.arc((630, 760, 710, 815), 20, 160, fill=ink, width=10)
+    else:
+        for ex in (575, 765):                     # calm, closed eyes
+            f.arc((ex - 28, 715, ex + 28, 765), 200, 340, fill=ink, width=10)
+        f.arc((640, 770, 700, 805), 20, 160, fill=ink, width=9)
+    cheeks = Image.new("RGBA", (N, N), (255, 140, 160, 0))
+    cd = ImageDraw.Draw(cheeks)
+    for ex in (515, 825):
+        cd.ellipse((ex - 42, 770, ex + 42, 806), fill=(255, 140, 160, 120))
+    img.alpha_composite(cheeks.filter(ImageFilter.GaussianBlur(6)))
+    finish(img, glow, path, 0.45, 34)
+
+
 def cloud(path, top, bottom, line, glow):
     m = Image.new("L", (N, N), 0)
     d = ImageDraw.Draw(m)
@@ -98,7 +142,7 @@ def moon():
     finish(img, (255, 240, 190), "src/moon.png", 0.6, 46)
 
 
-cloud("src/cloud_rain.png", (235, 240, 248), (135, 150, 180), (55, 65, 90), (140, 180, 255))
-cloud("src/cloud_snow.png", (255, 255, 255), (205, 222, 245), (90, 110, 145), (220, 235, 255))
+cute_cloud("src/cloud_rain.png", (226, 234, 248), (150, 168, 200), (70, 80, 110), (140, 180, 255), happy=False)
+cute_cloud("src/cloud_snow.png", (255, 255, 255), (212, 228, 250), (95, 115, 155), (220, 235, 255), happy=True)
 sun()
 moon()

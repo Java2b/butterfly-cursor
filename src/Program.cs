@@ -723,7 +723,7 @@ namespace ButterflyCursor
                 {
                     // from the flat bottom of the cloud
                     p.X = px + Rand(-0.32f, 0.32f) * S * k;
-                    p.Y = py + S * k * 0.19f;
+                    p.Y = py + S * k * 0.25f;
                     p.Vx = vx * 0.25f;
                     if (rain)
                     {

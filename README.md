@@ -12,7 +12,7 @@
 
 ### Что умеет
 
-- 🦋 Бабочка, жук, паук, улитка, **ниндзя с мечом** (медитирует на «Пуске»), **рука-помощница** на пальцах и **флаг любой страны** (271 флаг).
+- 🦋 Бабочка, жук, паук, улитка, **ниндзя с мечом** (медитирует на «Пуске»), **рука-помощница** на пальцах, **облака с дождём и снегом, солнце и луна**, а также **флаг любой страны** (271 флаг).
 - 🎬 **Демонстрация для видео**, искры и сюрикены по клику, снег/листья/сакура/тыквы/конфетти по сезону, танец под музыку, ночное свечение и пара секретов.
 - ✨ Светящаяся пыльца: свои цвета (любой RGB), количество, размер, яркость, сияние вокруг существа.
 - 🖼️ Свои картинки: JPG/PNG — фон убирается автоматически. Полоска кадров (PNG шириной в несколько квадратов) превращается в анимацию.
@@ -47,7 +47,7 @@ build.bat
 
 ### Features
 
-- 🦋 A butterfly, a beetle, a spider, a snail, a **ninja with a sword** (meditates on the Start button), a **helper hand** walking on its fingers and **any country's flag** (271 flags).
+- 🦋 A butterfly, a beetle, a spider, a snail, a **ninja with a sword** (meditates on the Start button), a **helper hand** walking on its fingers, **rain and snow clouds, the sun and the moon**, and **any country's flag** (271 flags).
 - 🎬 **Demo mode for videos**, sparks and shurikens on click, seasonal snow / leaves / sakura / pumpkins / confetti, dancing to music, night glow and a couple of secrets.
 - ✨ Glowing dust: your own colours (any RGB), amount, size, brightness, a glow around the creature.
 - 🖼️ Your own pictures: JPG/PNG with the background removed automatically. A strip of square frames becomes an animation.
@@ -82,7 +82,7 @@ The creature pictures are drawn by the Python scripts in `tools` (Pillow, NumPy,
 
 ### Imkoniyatlari
 
-- 🦋 Kapalak, qoʻngʻiz, oʻrgimchak, shilliqqurt, **qilichli ninja** («Pusk» ustida meditatsiya qiladi), barmoqlarida yuradigan **yordamchi qoʻl** va **istalgan davlat bayrogʻi** (271 ta bayroq).
+- 🦋 Kapalak, qoʻngʻiz, oʻrgimchak, shilliqqurt, **qilichli ninja** («Pusk» ustida meditatsiya qiladi), barmoqlarida yuradigan **yordamchi qoʻl**, **yomgʻirli va qorli bulutlar, quyosh va oy**, hamda **istalgan davlat bayrogʻi** (271 ta bayroq).
 - 🎬 **Video uchun namoyish**, bosganda uchqun va shurikenlar, mavsumiy qor / barglar / sakura / qovoqlar / konfetti, musiqaga raqs, tungi yogʻdu va bir nechta sir.
 - ✨ Yaltiroq chang: oʻz ranglaringiz (istalgan RGB), soni, oʻlchami, yorqinligi, jonzot atrofidagi yogʻdu.
 - 🖼️ Oʻz rasmlaringiz: JPG/PNG — fon avtomatik olib tashlanadi. Kvadrat kadrlardan iborat tasma animatsiyaga aylanadi.
