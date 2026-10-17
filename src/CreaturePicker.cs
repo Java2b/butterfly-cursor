@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Drawing;
 using System.Drawing.Drawing2D;
@@ -28,7 +28,8 @@ namespace ButterflyCursor
         readonly Dictionary<string, Preview> previews = new Dictionary<string, Preview>();
         readonly List<float[]> dots = new List<float[]>();   // x, y, vx, vy, life, maxLife, colour index
         List<Creature> items = new List<Creature>();
-        string selectedId, hoverId, category = "all";
+        string selectedId, hoverId, pendingId, category = "all";
+        bool hoverApply;
         int hoverCat = -1;
         float scroll;
         double t0 = Environment.TickCount / 1000.0, previewSince;
@@ -67,6 +68,7 @@ namespace ButterflyCursor
         {
             items = list;
             selectedId = selected;
+            pendingId = null;
             foreach (Bitmap b in thumbs.Values) b.Dispose();
             thumbs.Clear();
             if (previews.ContainsKey("flag")) { previews["flag"].Dispose(); previews.Remove("flag"); }   // the country may have changed
@@ -233,7 +235,7 @@ namespace ButterflyCursor
 
         Creature Current()
         {
-            string id = hoverId ?? selectedId;
+            string id = pendingId ?? selectedId;
             Creature c = items.Find(delegate(Creature x) { return x.Id == id; });
             if (c != null && c.Id != previewId) { previewId = c.Id; previewSince = Now(); dots.Clear(); }
             return c;
@@ -281,8 +283,34 @@ namespace ButterflyCursor
                         using (GraphicsPath pp = Theme.Rounded(pill, pill.Height / 2))
                         using (var b = new SolidBrush(Theme.Accent)) g.FillPath(b, pp);
                         using (var b = new SolidBrush(Color.White)) g.DrawString(cat, f, b, pill.X + 9 * k, pill.Y + (pill.Height - sz.Height) / 2);
+                        // the Apply button sits right next to the category, away from the animation
+                        applyRect = new RectangleF(pill.Right + 10 * k, pill.Y - 5 * k, 132 * k, pill.Height + 10 * k);
                     }
+                    if (pendingId != null) DrawApply(g);
                 }
+            }
+        }
+
+        RectangleF applyRect;
+        RectangleF ApplyRect() { return applyRect; }
+
+        /// <summary>The "Apply" pill: appears on the stage only while a new creature is being previewed.</summary>
+        void DrawApply(Graphics g)
+        {
+            RectangleF r = ApplyRect();
+            using (GraphicsPath glow = Theme.Rounded(new RectangleF(r.X - 3 * k, r.Y - 3 * k, r.Width + 6 * k, r.Height + 6 * k), r.Height / 2 + 3 * k))
+            using (var b = new SolidBrush(Color.FromArgb(hoverApply ? 90 : 55, Theme.Accent))) g.FillPath(b, glow);
+            using (GraphicsPath p = Theme.Rounded(r, r.Height / 2))
+            {
+                Color top = hoverApply ? ControlPaint.Light(Theme.Accent, 0.25f) : Theme.Accent;
+                using (var b = new LinearGradientBrush(r, top, ControlPaint.Dark(Theme.Accent, 0.05f), LinearGradientMode.Vertical)) g.FillPath(b, p);
+            }
+            using (var f = new Font("Segoe UI", 10f, FontStyle.Bold))
+            using (var b = new SolidBrush(Color.White))
+            {
+                string text = "✓  " + L.T("Применить");
+                SizeF sz = g.MeasureString(text, f);
+                g.DrawString(text, f, b, r.X + (r.Width - sz.Width) / 2, r.Y + (r.Height - sz.Height) / 2);
             }
         }
 
@@ -436,11 +464,12 @@ namespace ButterflyCursor
                 RectangleF r = TileRect(i);
                 if (r.Bottom < bodyTop || r.Top > bodyTop + bodyH) continue;
                 Creature c = list[i];
-                bool sel = c.Id == selectedId, hov = c.Id == hoverId;
+                bool sel = c.Id == selectedId, hov = c.Id == hoverId, pend = c.Id == pendingId;
+                bool ring = pend || (sel && pendingId == null);
                 using (GraphicsPath p = Theme.Rounded(r, 10 * k))
                 {
-                    using (var b = new SolidBrush(sel ? Theme.Sel : Theme.Card)) g.FillPath(b, p);
-                    using (var pen = new Pen(sel ? Theme.Accent : hov ? Color.FromArgb(160, Theme.Accent) : Theme.Border, sel ? 2f * k : 1f)) g.DrawPath(pen, p);
+                    using (var b = new SolidBrush(ring ? Theme.Sel : Theme.Card)) g.FillPath(b, p);
+                    using (var pen = new Pen(ring ? Theme.Accent : hov ? Color.FromArgb(160, Theme.Accent) : Theme.Border, ring ? 2f * k : 1f)) g.DrawPath(pen, p);
                 }
                 Bitmap th = Thumb(c);
                 g.DrawImage(th, r.X + (r.Width - th.Width) / 2, r.Y + (r.Height - th.Height) / 2, th.Width, th.Height);
@@ -484,26 +513,36 @@ namespace ButterflyCursor
                     for (int i = 0; i < list.Count; i++) if (TileRect(i).Contains(e.Location)) hid = list[i].Id;
                 }
             }
-            Cursor = hid != null || hc >= 0 ? Cursors.Hand : Cursors.Default;
-            if (hid != hoverId || hc != hoverCat) { hoverId = hid; hoverCat = hc; Invalidate(); }
+            bool ha = pendingId != null && ApplyRect().Contains(e.Location);
+            Cursor = hid != null || hc >= 0 || ha ? Cursors.Hand : Cursors.Default;
+            if (hid != hoverId || hc != hoverCat || ha != hoverApply) { hoverId = hid; hoverCat = hc; hoverApply = ha; Invalidate(); }
         }
 
         protected override void OnMouseLeave(EventArgs e)
         {
             base.OnMouseLeave(e);
-            if (hoverId != null || hoverCat >= 0) { hoverId = null; hoverCat = -1; Invalidate(); }
+            if (hoverId != null || hoverCat >= 0 || hoverApply) { hoverId = null; hoverCat = -1; hoverApply = false; Invalidate(); }
         }
 
         protected override void OnMouseClick(MouseEventArgs e)
         {
             base.OnMouseClick(e);
             if (e.Button != MouseButtons.Left) return;
+            if (hoverApply && pendingId != null)
+            {
+                selectedId = pendingId;
+                pendingId = null;
+                hoverApply = false;
+                Invalidate();
+                if (Picked != null) Picked(Selected);
+                return;
+            }
             if (hoverCat >= 0) { category = CatIds[hoverCat]; scroll = 0; Invalidate(); return; }
             if (hoverId != null)
             {
-                selectedId = hoverId;
+                // a click only previews; nothing changes on the desktop until "Apply"
+                pendingId = hoverId == selectedId ? null : hoverId;
                 Invalidate();
-                if (Picked != null) Picked(Selected);
             }
         }
 

@@ -130,6 +130,8 @@ namespace ButterflyCursor
             { "Полумесяц, вокруг мерцают звёзды", new[] { "A crescent with twinkling stars around", "Yarim oy, atrofida yulduzlar miltillaydi" } },
             { "Флаг вашей страны развевается на ветру", new[] { "Your country's flag waving in the wind", "Davlatingiz bayrogʻi shamolda hilpiraydi" } },
 
+            { "Применить", new[] { "Apply", "Qoʻllash" } },
+
             // behaviour
             { "Поведение", new[] { "Behaviour", "Xatti-harakat" } },
             { "Скорость", new[] { "Speed", "Tezlik" } },
