@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Diagnostics;
 using System.Drawing;
 using System.IO;
@@ -15,7 +15,7 @@ namespace ButterflyCursor
     static class Installer
     {
         public const string AppName = "Butterfly Cursor";
-        public const string Version = "1.2";
+        public const string Version = "1.3";
         const string AppKey = @"Software\ButterflyCursor";
         const string UninstallKey = @"Software\Microsoft\Windows\CurrentVersion\Uninstall\ButterflyCursor";
 
