@@ -94,6 +94,8 @@ namespace ButterflyCursor
             { "Солнце", new[] { "Sun", "Quyosh" } },
             { "Луна", new[] { "Moon", "Oy" } },
 
+            { "Лучадор «Бабочка»", new[] { "Luchador “Mariposa”", "Luchador «Kapalak»" } },
+
             // behaviour
             { "Поведение", new[] { "Behaviour", "Xatti-harakat" } },
             { "Скорость", new[] { "Speed", "Tezlik" } },

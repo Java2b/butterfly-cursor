@@ -102,6 +102,7 @@ namespace ButterflyCursor
                 new Creature { Id = "snail", Title = L.T("Улитка"), DefaultStyle = MoveStyle.Slide },
                 new Creature { Id = "ninja", Title = L.T("Ниндзя"), DefaultStyle = MoveStyle.Run },
                 new Creature { Id = "hand", Title = L.T("Рука-помощница"), DefaultStyle = MoveStyle.Run },
+                new Creature { Id = "luchador", Title = L.T("Лучадор «Бабочка»"), DefaultStyle = MoveStyle.Run },
                 new Creature { Id = "cloud_rain", Title = L.T("Облако с дождём"), DefaultStyle = MoveStyle.Float },
                 new Creature { Id = "cloud_snow", Title = L.T("Облако со снегом"), DefaultStyle = MoveStyle.Float },
                 new Creature { Id = "sun", Title = L.T("Солнце"), DefaultStyle = MoveStyle.Float },
