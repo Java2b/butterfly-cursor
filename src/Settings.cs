@@ -65,6 +65,8 @@ namespace ButterflyCursor
         public int RunFrames;
         public int[] RestSeq;              // order of the resting frames (counted from the first one after the run cycle)
         public float RestStep = 0.8f;      // seconds per resting frame
+        public float Pace;                 // its natural speed (1 = ordinary); 0 = by the way it moves
+        public float Accel = 0.6f;         // seconds to get up to full speed from standing still
         public bool Jumps;                 // the last 4 frames are a somersault (quarter turns); it jumps while running
         public bool Flies;                 // side-view frames, but it flies (hovers, keeps flapping)
         public string Category = "mine";   // insects, animals, heroes, vehicles, weather, flags, mine
@@ -104,26 +106,26 @@ namespace ButterflyCursor
         {
             var list = new List<Creature>
             {
-                new Creature { Id = "butterfly", Title = L.T("Бабочка"), DefaultStyle = MoveStyle.Fly, Category = "insects", Desc = "Порхает за мышью и оставляет волшебную пыльцу" },
-                new Creature { Id = "beetle", Title = L.T("Жук"), DefaultStyle = MoveStyle.Crawl, Category = "insects", Desc = "Деловито ползает и покачивается на ходу" },
-                new Creature { Id = "spider", Title = L.T("Паук"), DefaultStyle = MoveStyle.Crawl, Category = "insects", Desc = "Быстро перебирает лапками" },
-                new Creature { Id = "snail", Title = L.T("Улитка"), DefaultStyle = MoveStyle.Slide, Category = "insects", Desc = "Медленно, но верно ползёт к курсору" },
-                new Creature { Id = "ninja", Title = L.T("Ниндзя"), DefaultStyle = MoveStyle.Run, Category = "heroes", Desc = "Бежит с мечом, в покое медитирует на «Пуске»" },
-                new Creature { Id = "hand", Title = L.T("Рука-помощница"), DefaultStyle = MoveStyle.Run, Category = "heroes", Desc = "Бегает на кончиках пальцев" },
-                new Creature { Id = "luchador", Title = L.T("Лучадор «Бабочка»"), DefaultStyle = MoveStyle.Run, Category = "heroes", Desc = "Рестлер в маске, в покое играет мышцами" },
-                new Creature { Id = "commando", Title = L.T("Пиксельный коммандос"), DefaultStyle = MoveStyle.Run, RunFrames = 6, RestSeq = new[] { 0, 0, 0, 0, 3, 0, 0, 0, 1, 2, 1, 2, 1, 2, 0, 0, 0, 3, 0, 0 }, RestStep = 0.16f, Jumps = true, Category = "heroes", Desc = "Герой ретро-игр: бегает, прыгает кувырком, в покое отстреливается" },
-                new Creature { Id = "biker", Title = L.T("Байкер"), DefaultStyle = MoveStyle.Run, RunFrames = 4, RestSeq = new[] { 0, 0, 0, 0, 2, 2, 0, 0, 0, 1, 1, 1, 0, 0 }, RestStep = 0.25f, Category = "vehicles", Desc = "Мчит на мотоцикле, в покое стоит на подножке, машет и газует" },
-                new Creature { Id = "helicopter", Title = L.T("Вертолёт"), DefaultStyle = MoveStyle.Run, RunFrames = 4, RestSeq = new[] { 0, 1 }, RestStep = 0.14f, Flies = true, Category = "vehicles", Desc = "Спасательный вертолёт: летает за мышью, садится у «Пуска»" },
-                new Creature { Id = "attack_heli", Title = L.T("Ударный вертолёт"), DefaultStyle = MoveStyle.Run, RunFrames = 4, RestSeq = new[] { 0, 1 }, RestStep = 0.2f, Flies = true, Category = "vehicles", Desc = "Военный вертолёт с крылышками и ракетами: летает за мышью, садится у «Пуска»" },
-                new Creature { Id = "elephant", Title = L.T("Слонёнок"), DefaultStyle = MoveStyle.Run, RunFrames = 6, RestSeq = new[] { 0, 0, 0, 0, 0, 1, 0, 0, 0, 2, 2, 0, 0, 0, 1, 0 }, RestStep = 0.3f, Category = "animals", Desc = "Пиксельный слонёнок: топает, в покое сидит и машет хоботом" },
-                new Creature { Id = "snake", Title = L.T("Змея"), DefaultStyle = MoveStyle.Crawl, RunFrames = 8, RestSeq = new[] { 0, 0, 0, 0, 1, 0, 1, 0, 0, 0, 0, 0, 0, 1, 2, 1, 0, 0 }, RestStep = 0.18f, Category = "animals", Desc = "Питон, вид сверху: ползёт волной, в покое сворачивается кольцом и показывает язык" },
-                new Creature { Id = "fox", Title = L.T("Лисичка"), DefaultStyle = MoveStyle.Run, RunFrames = 6, RestSeq = new[] { 0, 1, 2, 3, 4, 5 }, RestStep = 0.16f, Category = "animals", Desc = "Рыжая лиса: бегает за курсором, в покое дышит и шевелит хвостом" },
-                new Creature { Id = "panda", Title = L.T("Панда-мастер"), DefaultStyle = MoveStyle.Run, RunFrames = 6, RestSeq = new[] { 0, 0, 1, 2, 3, 4, 3, 4, 3, 4, 1 }, RestStep = 0.34f, Category = "animals", Desc = "Ходит вразвалку, в покое ест бамбук" },
-                new Creature { Id = "cloud_rain", Title = L.T("Облако с дождём"), DefaultStyle = MoveStyle.Float, Category = "weather", Desc = "Летает за мышью и поливает дождиком" },
-                new Creature { Id = "cloud_snow", Title = L.T("Облако со снегом"), DefaultStyle = MoveStyle.Float, Category = "weather", Desc = "Тихо сыплет снежинки" },
-                new Creature { Id = "sun", Title = L.T("Солнце"), DefaultStyle = MoveStyle.Float, Category = "weather", Desc = "Светит и медленно вращает лучами" },
-                new Creature { Id = "moon", Title = L.T("Луна"), DefaultStyle = MoveStyle.Float, Category = "weather", Desc = "Полумесяц, вокруг мерцают звёзды" },
-                new Creature { Id = "flag", Title = L.T("Флаг"), DefaultStyle = MoveStyle.Wave, Category = "flags", Desc = "Флаг вашей страны развевается на ветру" },
+                new Creature { Id = "butterfly", Pace = 1.3f, Accel = 0.5f, Title = L.T("Бабочка"), DefaultStyle = MoveStyle.Fly, Category = "insects", Desc = "Порхает за мышью и оставляет волшебную пыльцу" },
+                new Creature { Id = "beetle", Pace = 0.6f, Accel = 0.5f, Title = L.T("Жук"), DefaultStyle = MoveStyle.Crawl, Category = "insects", Desc = "Деловито ползает и покачивается на ходу" },
+                new Creature { Id = "spider", Pace = 0.9f, Accel = 0.3f, Title = L.T("Паук"), DefaultStyle = MoveStyle.Crawl, Category = "insects", Desc = "Быстро перебирает лапками" },
+                new Creature { Id = "snail", Pace = 0.15f, Accel = 0.8f, Title = L.T("Улитка"), DefaultStyle = MoveStyle.Slide, Category = "insects", Desc = "Медленно, но верно ползёт к курсору" },
+                new Creature { Id = "ninja", Pace = 1.4f, Accel = 0.35f, Title = L.T("Ниндзя"), DefaultStyle = MoveStyle.Run, Category = "heroes", Desc = "Бежит с мечом, в покое медитирует на «Пуске»" },
+                new Creature { Id = "hand", Pace = 0.75f, Accel = 0.5f, Title = L.T("Рука-помощница"), DefaultStyle = MoveStyle.Run, Category = "heroes", Desc = "Бегает на кончиках пальцев" },
+                new Creature { Id = "luchador", Pace = 0.8f, Accel = 0.6f, Title = L.T("Лучадор «Бабочка»"), DefaultStyle = MoveStyle.Run, Category = "heroes", Desc = "Рестлер в маске, в покое играет мышцами" },
+                new Creature { Id = "commando", Pace = 0.9f, Accel = 0.5f, Title = L.T("Пиксельный коммандос"), DefaultStyle = MoveStyle.Run, RunFrames = 6, RestSeq = new[] { 0, 0, 0, 0, 3, 0, 0, 0, 1, 2, 1, 2, 1, 2, 0, 0, 0, 3, 0, 0 }, RestStep = 0.16f, Jumps = true, Category = "heroes", Desc = "Герой ретро-игр: бегает, прыгает кувырком, в покое отстреливается" },
+                new Creature { Id = "biker", Pace = 1.5f, Accel = 0.9f, Title = L.T("Байкер"), DefaultStyle = MoveStyle.Run, RunFrames = 4, RestSeq = new[] { 0, 0, 0, 0, 2, 2, 0, 0, 0, 1, 1, 1, 0, 0 }, RestStep = 0.25f, Category = "vehicles", Desc = "Мчит на мотоцикле, в покое стоит на подножке, машет и газует" },
+                new Creature { Id = "helicopter", Pace = 1.0f, Accel = 1.1f, Title = L.T("Вертолёт"), DefaultStyle = MoveStyle.Run, RunFrames = 4, RestSeq = new[] { 0, 1 }, RestStep = 0.14f, Flies = true, Category = "vehicles", Desc = "Спасательный вертолёт: летает за мышью, садится у «Пуска»" },
+                new Creature { Id = "attack_heli", Pace = 1.3f, Accel = 1.0f, Title = L.T("Ударный вертолёт"), DefaultStyle = MoveStyle.Run, RunFrames = 4, RestSeq = new[] { 0, 1 }, RestStep = 0.2f, Flies = true, Category = "vehicles", Desc = "Военный вертолёт с крылышками и ракетами: летает за мышью, садится у «Пуска»" },
+                new Creature { Id = "elephant", Pace = 0.45f, Accel = 0.9f, Title = L.T("Слонёнок"), DefaultStyle = MoveStyle.Run, RunFrames = 6, RestSeq = new[] { 0, 0, 0, 0, 0, 1, 0, 0, 0, 2, 2, 0, 0, 0, 1, 0 }, RestStep = 0.3f, Category = "animals", Desc = "Пиксельный слонёнок: топает, в покое сидит и машет хоботом" },
+                new Creature { Id = "snake", Pace = 0.5f, Accel = 1.2f, Title = L.T("Змея"), DefaultStyle = MoveStyle.Crawl, RunFrames = 8, RestSeq = new[] { 0, 0, 0, 0, 1, 0, 1, 0, 0, 0, 0, 0, 0, 1, 2, 1, 0, 0 }, RestStep = 0.18f, Category = "animals", Desc = "Питон, вид сверху: ползёт волной, в покое сворачивается кольцом и показывает язык" },
+                new Creature { Id = "fox", Pace = 1.1f, Accel = 0.5f, Title = L.T("Лисичка"), DefaultStyle = MoveStyle.Run, RunFrames = 6, RestSeq = new[] { 0, 1, 2, 3, 4, 5 }, RestStep = 0.16f, Category = "animals", Desc = "Рыжая лиса: бегает за курсором, в покое дышит и шевелит хвостом" },
+                new Creature { Id = "panda", Pace = 0.45f, Accel = 0.9f, Title = L.T("Панда-мастер"), DefaultStyle = MoveStyle.Run, RunFrames = 6, RestSeq = new[] { 0, 0, 1, 2, 3, 4, 3, 4, 3, 4, 1 }, RestStep = 0.34f, Category = "animals", Desc = "Ходит вразвалку, в покое ест бамбук" },
+                new Creature { Id = "cloud_rain", Pace = 0.35f, Accel = 1.5f, Title = L.T("Облако с дождём"), DefaultStyle = MoveStyle.Float, Category = "weather", Desc = "Летает за мышью и поливает дождиком" },
+                new Creature { Id = "cloud_snow", Pace = 0.35f, Accel = 1.5f, Title = L.T("Облако со снегом"), DefaultStyle = MoveStyle.Float, Category = "weather", Desc = "Тихо сыплет снежинки" },
+                new Creature { Id = "sun", Pace = 0.35f, Accel = 1.5f, Title = L.T("Солнце"), DefaultStyle = MoveStyle.Float, Category = "weather", Desc = "Светит и медленно вращает лучами" },
+                new Creature { Id = "moon", Pace = 0.35f, Accel = 1.5f, Title = L.T("Луна"), DefaultStyle = MoveStyle.Float, Category = "weather", Desc = "Полумесяц, вокруг мерцают звёзды" },
+                new Creature { Id = "flag", Pace = 0.7f, Accel = 0.8f, Title = L.T("Флаг"), DefaultStyle = MoveStyle.Wave, Category = "flags", Desc = "Флаг вашей страны развевается на ветру" },
             };
             Importer.ConvertPending();      // JPGs dropped into the folder become PNGs first
             try

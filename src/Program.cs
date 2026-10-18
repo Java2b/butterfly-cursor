@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Drawing;
@@ -330,7 +330,8 @@ namespace ButterflyCursor
         // click reactions
         bool mouseWasDown;
         float hopT, flipT;
-        float tilt;                        // helicopters dip the nose towards where they fly
+        float tilt;
+        float pace, accelTime = 0.6f;      // the creature's natural speed and how long it takes to reach it                        // helicopters dip the nose towards where they fly
         // somersault jump (the commando): frames jumpFirst..jumpFirst+3 are quarter turns
         const float JumpLen = 0.62f;
         bool jumps; int jumpFirst; float jumpT; double nextJump, lastJump;
@@ -477,6 +478,7 @@ namespace ButterflyCursor
             idleFrame = n >= 3 && n % 2 == 1 ? n - 1 : 0;
             runFrames = idleFrame > 0 ? n - 1 : n;
             restSeq = null; flies = c.Flies; restStep = c.RestStep;
+            pace = c.Pace; accelTime = Math.Max(0.1f, c.Accel);
             jumps = c.Jumps && n >= 5; jumpFirst = n - 4;
             snake = c.Id == "snake";
             if (fresh) { jumpT = 0; trail.Clear(); snSpeed = 0; coilT = 0; }
@@ -888,7 +890,7 @@ namespace ButterflyCursor
         /// <summary>The head crawls towards the target along a gentle S-wave; the body is the path it leaves.</summary>
         float SnakeStep(float tx, float ty, float dist, bool idle, float dt)
         {
-            float vmax = (40f + 16f * Cfg.Speed) * dpi;
+            float vmax = 180f * Cfg.Speed * dpi * (pace > 0 ? pace : 0.5f) * 0.35f;   // a snake crawls well below the others
             if (resting && dist > S * 0.8f) resting = false;
             if (!resting && idle && dist < Math.Max(4f * dpi, S * 0.12f)) resting = true;
 
@@ -899,7 +901,8 @@ namespace ButterflyCursor
                 // stop beside the pointer instead of circling it; slow down on arrival
                 float stopR = idle ? 0f : S * 0.5f;
                 float want = dist <= stopR ? 0f : Math.Min(vmax, (dist - stopR) * 1.8f + 18f * dpi);
-                snSpeed += (want - snSpeed) * Math.Min(1f, dt * 2.2f);
+                float step0 = vmax / accelTime * dt * (want < snSpeed ? 1.8f : 1f);       // steady speeding up and slowing down
+                snSpeed = want > snSpeed ? Math.Min(want, snSpeed + step0) : Math.Max(want, snSpeed - step0);
                 // now and then, while the pointer rests, it curls round in a loop and crawls over its own body
                 double now = clock.Elapsed.TotalSeconds;
                 if (idle) snLoopT = 0;
@@ -909,7 +912,7 @@ namespace ButterflyCursor
                     if (snNextLoop <= 0) snNextLoop = now + 1.5;
                     else { snLoopT = Rand(2.2f, 3.6f); snLoopDir = rnd.Next(2) == 0 ? 1f : -1f; snNextLoop = now + Rand(4f, 7f); }
                 }
-                if (snLoopT > 0) snSpeed += (vmax * 0.75f - snSpeed) * Math.Min(1f, dt * 2.5f);
+                if (snLoopT > 0) snSpeed = Math.Min(vmax * 0.75f, snSpeed + vmax / accelTime * dt);
                 if (snSpeed > 2f * dpi)
                 {
                     float waveAmp = 0.55f;
@@ -1182,7 +1185,7 @@ namespace ButterflyCursor
             finally { Interlocked.Exchange(ref framePending, 0); }
         }
 
-        // BUTTERFLY_DEBUG=1: every 5 s writes how even the frame timing was (to %TEMP%utterfly-debug.txt)
+        // BUTTERFLY_DEBUG=1: every 5 s writes how even the frame timing was (to %TEMP%\butterfly-debug.txt)
         static readonly bool debug = Environment.GetEnvironmentVariable("BUTTERFLY_DEBUG") == "1";
         int statFrames; double statMaxGap, statSince;
 
@@ -1223,7 +1226,7 @@ namespace ButterflyCursor
                 return;
             }
 
-            if (now - lastTopmost > 2)
+            if (now - lastTopmost > 2 && !CursorHidden())
             {
                 lastTopmost = now;
                 Native.SetWindowPos(Handle, Native.HWND_TOPMOST, 0, 0, 0, 0,
@@ -1250,7 +1253,8 @@ namespace ButterflyCursor
             wasIdle = idle;
 
             // speed setting 1..10; crawlers are slower than fliers, the snail is much slower
-            float styleK = style == MoveStyle.Crawl ? 0.65f : style == MoveStyle.Slide ? 0.2f : style == MoveStyle.Run && !flies ? 0.85f : 1f;
+            float styleK = pace > 0 ? pace
+                         : style == MoveStyle.Crawl ? 0.65f : style == MoveStyle.Slide ? 0.2f : style == MoveStyle.Run && !flies ? 0.85f : 1f;
             float maxSpeed = 180f * Cfg.Speed * dpi * styleK;
             float arrive = 2f + 0.6f * Cfg.Speed;
 
@@ -1329,8 +1333,10 @@ namespace ButterflyCursor
                     // with limited acceleration so that take-off is not a sudden jump
                     float wantSpeed = Math.Min(maxSpeed, dist * arrive);
                     float wx = dist > 0.01f ? dx / dist * wantSpeed : 0, wy = dist > 0.01f ? dy / dist * wantSpeed : 0;
-                    float ax = (wx - vx) * 7f, ay = (wy - vy) * 7f;
-                    float acc = (float)Math.Sqrt(ax * ax + ay * ay), maxAcc = maxSpeed * 3.5f;
+                    // a steady push: from standing still it takes accelTime to reach full speed; braking is a bit quicker
+                    float ax = (wx - vx) * 12f, ay = (wy - vy) * 12f;
+                    float braking = wantSpeed < (float)Math.Sqrt(vx * vx + vy * vy) ? 1.8f : 1f;
+                    float acc = (float)Math.Sqrt(ax * ax + ay * ay), maxAcc = maxSpeed / accelTime * braking;
                     if (acc > maxAcc) { ax *= maxAcc / acc; ay *= maxAcc / acc; }
                     vx += ax * dt; vy += ay * dt;
                     float ox = px, oy = py;
@@ -1483,6 +1489,25 @@ namespace ButterflyCursor
             box = Rectangle.FromLTRB(FloorTo(box.Left, Grid), FloorTo(box.Top, Grid),
                                      FloorTo(box.Right + Grid - 1, Grid), FloorTo(box.Bottom + Grid - 1, Grid));
             box.Intersect(SystemInformation.VirtualScreen);
+            // Every change of the window's bounds counts for Windows as the mouse moving over it, and that
+            // brings back a pointer hidden while typing. So the window only grows when it has to, and shrinks
+            // back later, never while the pointer is hidden.
+            if (!winBox.IsEmpty && winBox.Contains(box))
+            {
+                long boxArea = (long)box.Width * box.Height, winArea = (long)winBox.Width * winBox.Height;
+                if (winArea > 3 * Math.Max(boxArea, 1) && !CursorHidden()) { if (++boxShrink > 120) { winBox = box; boxShrink = 0; } }
+                else boxShrink = 0;
+            }
+            else
+            {
+                bool hidden = CursorHidden();
+                int pad = hidden ? 220 : 64;              // while typing: room to spare, so it does not have to grow again
+                Rectangle grown = Rectangle.Inflate(box, pad, pad);
+                grown.Intersect(SystemInformation.VirtualScreen);
+                winBox = !winBox.IsEmpty && hidden ? Rectangle.Union(winBox, grown) : grown;
+                boxShrink = 0;
+            }
+            if (!paused && !fullscreen && box.Width > 0 && box.Height > 0) box = winBox;
             if (paused || fullscreen || box.Width <= 0 || box.Height <= 0) box = new Rectangle(box.X, box.Y, 1, 1);
 
             long need = (long)box.Width * box.Height, have = (long)surface.W * surface.H;
@@ -1525,6 +1550,21 @@ namespace ButterflyCursor
             GC.Collect();
             try { SetProcessWorkingSetSize(Process.GetCurrentProcess().Handle, (IntPtr)(-1), (IntPtr)(-1)); } catch { }
             lastTrim = clock.Elapsed.TotalSeconds;
+        }
+
+        Rectangle winBox;
+        int boxShrink;
+
+        [StructLayout(LayoutKind.Sequential)]
+        struct CURSORINFO { public int cbSize, flags; public IntPtr hCursor; public Native.POINT pt; }
+        [DllImport("user32.dll")] static extern bool GetCursorInfo(ref CURSORINFO ci);
+
+        /// <summary>True while Windows hides the pointer (typing with "hide pointer while typing" on).</summary>
+        static bool CursorHidden()
+        {
+            var ci = new CURSORINFO();
+            ci.cbSize = Marshal.SizeOf(typeof(CURSORINFO));
+            return GetCursorInfo(ref ci) && ((ci.flags & 1) == 0 || ci.hCursor == IntPtr.Zero);
         }
 
         static int FloorTo(int v, int grid) { return (int)Math.Floor(v / (double)grid) * grid; }
