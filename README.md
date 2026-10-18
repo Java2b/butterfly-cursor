@@ -12,7 +12,9 @@
 
 ### Что умеет
 
-- 🦋 Бабочка, жук, паук, улитка, **ниндзя с мечом** (медитирует на «Пуске»), **рука-помощница** на пальцах, **облака с дождём и снегом, солнце и луна**, а также **флаг любой страны** (271 флаг).
+- 🦋 Бабочка, жук, паук, улитка, **живая змея** (тело повторяет путь головы, она кружится, проползает по себе и сворачивается кольцом), лиса, слонёнок, **панда-мастер** (в покое ест бамбук), **ниндзя с мечом** (медитирует на «Пуске»), лучадор «Бабочка», **пиксельный коммандос** (прыгает кувырком), байкер, спасательный и **ударный вертолёты**, **рука-помощница** на пальцах, **облака с дождём и снегом, солнце и луна**, а также **флаг любой страны** (271 флаг).
+- 🎨 Окно выбора существа с живым превью и категориями, светлая и тёмная тема.
+- 🔄 Сама сообщает о новой версии и обновляется по кнопке «Да» (можно отключить).
 - 🎬 **Демонстрация для видео**, искры и сюрикены по клику, снег/листья/сакура/тыквы/конфетти по сезону, танец под музыку, ночное свечение и пара секретов.
 - ✨ Светящаяся пыльца: свои цвета (любой RGB), количество, размер, яркость, сияние вокруг существа.
 - 🖼️ Свои картинки: JPG/PNG — фон убирается автоматически. Полоска кадров (PNG шириной в несколько квадратов) превращается в анимацию.
@@ -47,7 +49,9 @@ build.bat
 
 ### Features
 
-- 🦋 A butterfly, a beetle, a spider, a snail, a **ninja with a sword** (meditates on the Start button), a **helper hand** walking on its fingers, **rain and snow clouds, the sun and the moon**, and **any country's flag** (271 flags).
+- 🦋 A butterfly, a beetle, a spider, a snail, a **live snake** (the body follows the head's path; it loops, crawls over itself and coils up), a fox, a baby elephant, a **panda master** (eats bamboo when idle), a **ninja with a sword** (meditates on the Start button), the luchador “Mariposa”, a **pixel commando** (somersaults), a biker, a rescue and an **attack helicopter**, a **helper hand** walking on its fingers, **rain and snow clouds, the sun and the moon**, and **any country's flag** (271 flags).
+- 🎨 A creature picker with a live preview and categories, light and dark theme.
+- 🔄 Tells you about a new version and updates itself when you press “Yes” (can be switched off).
 - 🎬 **Demo mode for videos**, sparks and shurikens on click, seasonal snow / leaves / sakura / pumpkins / confetti, dancing to music, night glow and a couple of secrets.
 - ✨ Glowing dust: your own colours (any RGB), amount, size, brightness, a glow around the creature.
 - 🖼️ Your own pictures: JPG/PNG with the background removed automatically. A strip of square frames becomes an animation.
@@ -82,7 +86,9 @@ The creature pictures are drawn by the Python scripts in `tools` (Pillow, NumPy,
 
 ### Imkoniyatlari
 
-- 🦋 Kapalak, qoʻngʻiz, oʻrgimchak, shilliqqurt, **qilichli ninja** («Pusk» ustida meditatsiya qiladi), barmoqlarida yuradigan **yordamchi qoʻl**, **yomgʻirli va qorli bulutlar, quyosh va oy**, hamda **istalgan davlat bayrogʻi** (271 ta bayroq).
+- 🦋 Kapalak, qoʻngʻiz, oʻrgimchak, shilliqqurt, **jonli ilon** (tanasi boshining yoʻlidan yuradi, aylanadi, oʻz ustidan oʻtadi va halqa boʻlib oʻraladi), tulki, fil bolasi, **panda usta** (dam olganda bambuk yeydi), **qilichli ninja** («Pusk» ustida meditatsiya qiladi), «Kapalak» luchadori, **piksel komandos** (umbaloq oshib sakraydi), bayker, qutqaruv va **hujumchi vertolyotlar**, barmoqlarida yuradigan **yordamchi qoʻl**, **yomgʻirli va qorli bulutlar, quyosh va oy**, hamda **istalgan davlat bayrogʻi** (271 ta bayroq).
+- 🎨 Jonli koʻrinishli va toifali jonzot tanlash oynasi, yorugʻ va qorongʻi mavzu.
+- 🔄 Yangi versiya chiqqanini oʻzi aytadi va «Ha» tugmasi bilan yangilanadi (oʻchirib qoʻyish mumkin).
 - 🎬 **Video uchun namoyish**, bosganda uchqun va shurikenlar, mavsumiy qor / barglar / sakura / qovoqlar / konfetti, musiqaga raqs, tungi yogʻdu va bir nechta sir.
 - ✨ Yaltiroq chang: oʻz ranglaringiz (istalgan RGB), soni, oʻlchami, yorqinligi, jonzot atrofidagi yogʻdu.
 - 🖼️ Oʻz rasmlaringiz: JPG/PNG — fon avtomatik olib tashlanadi. Kvadrat kadrlardan iborat tasma animatsiyaga aylanadi.

@@ -15,7 +15,7 @@ namespace ButterflyCursor
     static class Installer
     {
         public const string AppName = "Butterfly Cursor";
-        public const string Version = "1.3";
+        public const string Version = "1.4";
         const string AppKey = @"Software\ButterflyCursor";
         const string UninstallKey = @"Software\Microsoft\Windows\CurrentVersion\Uninstall\ButterflyCursor";
 
