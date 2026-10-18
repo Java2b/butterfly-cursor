@@ -1149,7 +1149,7 @@ namespace ButterflyCursor
             float freq;
             bool riding = dizzyT > 0 && dizzyT <= DizzyLen - 1.2f;
             if (style == MoveStyle.Fly) freq = resting || riding ? 0.33f : 5f + 5f * moving + 6f * level;
-            else if (style == MoveStyle.Crawl) freq = 6.5f * moving;
+            else if (style == MoveStyle.Crawl) freq = runFrames > 1 ? 0.6f + 1.4f * moving : 6.5f * moving;   // the snake keeps a slow wave even when still
             else if (style == MoveStyle.Float) freq = resting ? 0f : 0.9f;
             else if (style == MoveStyle.Run) freq = flies ? 1.7f : 2.6f * moving;   // full run (or wing) cycles per second
             else if (style == MoveStyle.Wave) freq = 0.8f + 1.4f * moving;
@@ -1490,6 +1490,20 @@ namespace ButterflyCursor
                             g.FillRectangle(br, x, y, sw + 0.5f, content.Height);
                     }
                 }
+            }
+            else if (style == MoveStyle.Crawl && runFrames > 1)
+            {
+                // seen from above with its own frames (the snake): slithering, coiled up at rest
+                int idx = 0;
+                if (resting && restSeq != null && restSeq.Length > 0)
+                    idx = runFrames + restSeq[(int)((clock.Elapsed.TotalSeconds - restSince) / restStep) % restSeq.Length];
+                else
+                    idx = ((int)(phase / 6.2832f * runFrames) % runFrames + runFrames) % runFrames;
+                g.TranslateTransform(px, py);
+                g.ScaleTransform(scale, scale);
+                ApplyFun(g);
+                g.RotateTransform(angle);
+                g.DrawImage(frames[Math.Min(idx, frames.Length - 1)], -half, -half, S, S);
             }
             else if (style == MoveStyle.Crawl)
             {
