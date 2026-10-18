@@ -110,6 +110,7 @@ namespace ButterflyCursor
                 new Creature { Id = "ninja", Title = L.T("Ниндзя"), DefaultStyle = MoveStyle.Run, Category = "heroes", Desc = "Бежит с мечом, в покое медитирует на «Пуске»" },
                 new Creature { Id = "hand", Title = L.T("Рука-помощница"), DefaultStyle = MoveStyle.Run, Category = "heroes", Desc = "Бегает на кончиках пальцев" },
                 new Creature { Id = "luchador", Title = L.T("Лучадор «Бабочка»"), DefaultStyle = MoveStyle.Run, Category = "heroes", Desc = "Рестлер в маске, в покое играет мышцами" },
+                new Creature { Id = "commando", Title = L.T("Пиксельный коммандос"), DefaultStyle = MoveStyle.Run, RunFrames = 6, RestSeq = new[] { 0, 0, 0, 0, 3, 0, 0, 0, 1, 2, 1, 2, 1, 2, 0, 0, 0, 3, 0, 0 }, RestStep = 0.16f, Category = "heroes", Desc = "Герой ретро-игр: бежит с автоматом, в покое отстреливается" },
                 new Creature { Id = "dragon", Title = L.T("Дракон"), DefaultStyle = MoveStyle.Run, RunFrames = 6, RestSeq = new[] { 0, 1 }, RestStep = 1.0f, Flies = true, Category = "fantasy", Desc = "Летает и машет крыльями, в покое спит калачиком" },
                 new Creature { Id = "lion_head", Title = L.T("Голова льва"), DefaultStyle = MoveStyle.Float, Category = "animals", Desc = "Парит рядом, моргает и иногда рычит" },
                 new Creature { Id = "elephant", Title = L.T("Слонёнок"), DefaultStyle = MoveStyle.Run, RunFrames = 6, RestSeq = new[] { 1, 1, 0, 1 }, RestStep = 1.1f, Category = "animals", Desc = "Топает и играет хоботом" },
