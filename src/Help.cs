@@ -46,7 +46,7 @@ namespace ButterflyCursor
 Все изменения применяются сразу и сохраняются сами.
 
 # Существа
-В списке «Кто летает за мышью» есть бабочка, жук, паук, улитка, ниндзя с мечом, лучадор в маске, пиксельный коммандос, байкер, вертолёт, слонёнок, лисичка, панда-мастер, рука-помощница, облако с дождём, облако со снегом, солнце, луна и флаг. Список «Как двигается» задаёт способ движения: летает, ползает, скользит, парит, бежит или развевается, как флаг.
+В списке «Кто летает за мышью» есть бабочка, жук, паук, улитка, ниндзя с мечом, лучадор в маске, пиксельный коммандос, байкер, вертолёт, слонёнок, лисичка, змея, панда-мастер, рука-помощница, облако с дождём, облако со снегом, солнце, луна и флаг. Список «Как двигается» задаёт способ движения: летает, ползает, скользит, парит, бежит или развевается, как флаг.
 • Флаг своей страны выбирается в списке «Флаг страны» — там все страны мира.
 • Ниндзя бежит за мышью, как в старых играх, а когда мышь стоит — останавливается с мечом.
 
@@ -95,7 +95,7 @@ A small creature that follows your mouse pointer and leaves a trail of glowing d
 Every change is applied at once and saved automatically.
 
 # Creatures
-The “Who follows the mouse” list has a butterfly, a beetle, a spider, a snail, a ninja with a sword, a masked luchador, a pixel commando, a biker, a helicopter, a baby elephant, a fox, a panda master, a helper hand, a rain cloud, a snow cloud, the sun, the moon and a flag. “How it moves” sets the way of moving: flies, crawls, glides, floats, runs or waves like a flag.
+The “Who follows the mouse” list has a butterfly, a beetle, a spider, a snail, a ninja with a sword, a masked luchador, a pixel commando, a biker, a helicopter, a baby elephant, a fox, a snake, a panda master, a helper hand, a rain cloud, a snow cloud, the sun, the moon and a flag. “How it moves” sets the way of moving: flies, crawls, glides, floats, runs or waves like a flag.
 • Choose your country in the “Country flag” list — every country in the world is there.
 • The ninja runs after the mouse like in old games and stops, sword in hand, when the mouse is still.
 
@@ -144,7 +144,7 @@ Sichqoncha koʻrsatkichi ortidan uchib yuradigan va ortidan yaltiroq chang qoldi
 Barcha oʻzgarishlar darhol qoʻllanadi va oʻzi saqlanadi.
 
 # Jonzotlar
-«Sichqoncha ortidan kim yuradi» roʻyxatida kapalak, qoʻngʻiz, oʻrgimchak, shilliqqurt, qilichli ninja, niqobli luchador, piksel komandos, bayker, vertolyot, fil bolasi, tulkicha, panda usta, yordamchi qoʻl, yomgʻirli bulut, qorli bulut, quyosh, oy va bayroq bor. «Qanday harakatlanadi» roʻyxati harakat turini belgilaydi: uchadi, oʻrmalaydi, sirpanadi, havoda suzadi, yuguradi yoki bayroqdek hilpiraydi.
+«Sichqoncha ortidan kim yuradi» roʻyxatida kapalak, qoʻngʻiz, oʻrgimchak, shilliqqurt, qilichli ninja, niqobli luchador, piksel komandos, bayker, vertolyot, fil bolasi, tulkicha, ilon, panda usta, yordamchi qoʻl, yomgʻirli bulut, qorli bulut, quyosh, oy va bayroq bor. «Qanday harakatlanadi» roʻyxati harakat turini belgilaydi: uchadi, oʻrmalaydi, sirpanadi, havoda suzadi, yuguradi yoki bayroqdek hilpiraydi.
 • Oʻz davlatingiz bayrogʻini «Davlat bayrogʻi» roʻyxatidan tanlang — u yerda dunyoning barcha davlatlari bor.
 • Ninja eski oʻyinlardagidek sichqoncha ortidan yuguradi, sichqoncha toʻxtasa — qilichini ushlab toʻxtaydi.
 

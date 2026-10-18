@@ -168,7 +168,7 @@ def biker_frame(kind, i=0):
 
 
 # ------------------------------------------------------------------ helicopter
-BODY = (214, 40, 46, 255)        # red rescue helicopter
+BODY = (214, 40, 46, 255)        # red helicopter
 BODY_D = (150, 22, 30, 255)
 BODY_L = (250, 110, 110, 255)
 WHITE = (240, 240, 246, 255)
@@ -209,10 +209,6 @@ def heli(d, i, landed=False, slow=False):
     rect(d, 20, 16 + y, 25, 20 + y, GLASS)
     px(d, 21, 17 + y, GLASS_L)
     line(d, (19, 15 + y), (19, 26 + y), BODY_D)
-    # red cross on white
-    d.ellipse((12, 15 + y, 18, 21 + y), fill=WHITE)
-    rect(d, 15, 16 + y, 15, 20 + y, BODY)
-    rect(d, 13, 18 + y, 17, 18 + y, BODY)
     # engine hump, mast
     rect(d, 17, 10 + y, 28, 13 + y, BODY_D)
     rect(d, 18, 10 + y, 27, 11 + y, BODY)

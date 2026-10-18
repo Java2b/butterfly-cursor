@@ -99,6 +99,8 @@ namespace ButterflyCursor
 
             { "Слонёнок", new[] { "Baby elephant", "Fil bolasi" } },
             { "Лисичка", new[] { "Fox", "Tulkicha" } },
+            { "Змея", new[] { "Snake", "Ilon" } },
+            { "Зелёный питон: ползёт волной, в покое поднимает голову и пробует воздух языком", new[] { "A green python: slithers in waves; when idle it raises its head and tastes the air", "Yashil piton: toʻlqinsimon sudraladi, dam olganda boshini koʻtarib tili bilan havoni sinaydi" } },
             { "Байкер", new[] { "Biker", "Bayker" } },
             { "Вертолёт", new[] { "Helicopter", "Vertolyot" } },
             { "Транспорт", new[] { "Vehicles", "Transport" } },
