@@ -17,8 +17,8 @@ namespace ButterflyCursor
     {
         public event Action<Creature> Picked;
 
-        static readonly string[] CatIds = { "all", "insects", "animals", "heroes", "weather", "flags", "mine" };
-        static readonly string[] CatNames = { "Все", "Насекомые", "Животные", "Герои", "Погода", "Флаги", "Мои картинки" };
+        static readonly string[] CatIds = { "all", "insects", "animals", "heroes", "vehicles", "weather", "flags", "mine" };
+        static readonly string[] CatNames = { "Все", "Насекомые", "Животные", "Герои", "Транспорт", "Погода", "Флаги", "Мои картинки" };
 
         readonly float k;                                  // DPI scale
         readonly int stageH, sideW, tile, gap, bodyTop, bodyH;

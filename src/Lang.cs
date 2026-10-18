@@ -99,6 +99,11 @@ namespace ButterflyCursor
 
             { "Слонёнок", new[] { "Baby elephant", "Fil bolasi" } },
             { "Лисичка", new[] { "Fox", "Tulkicha" } },
+            { "Байкер", new[] { "Biker", "Bayker" } },
+            { "Вертолёт", new[] { "Helicopter", "Vertolyot" } },
+            { "Транспорт", new[] { "Vehicles", "Transport" } },
+            { "Мчит на мотоцикле, в покое стоит на подножке, машет и газует", new[] { "Races on a motorbike; when idle it stands on the kickstand, waves and revs", "Mototsiklda yeladi, dam olganda tirgakda turadi, qoʻl silkitadi va gaz beradi" } },
+            { "Спасательный вертолёт: летает за мышью, садится у «Пуска»", new[] { "A rescue helicopter: flies after the mouse and lands by Start", "Qutqaruv vertolyoti: sichqoncha ortidan uchadi, «Pusk» yoniga qoʻnadi" } },
             { "Пиксельный слонёнок: топает, в покое сидит и машет хоботом", new[] { "A pixel baby elephant: stomps along, sits and waves its trunk when idle", "Piksel fil bolasi: tap-tap yuradi, dam olganda oʻtirib xartumini silkitadi" } },
             { "Рыжая лиса: бегает за курсором, в покое дышит и шевелит хвостом", new[] { "A red fox: runs after the pointer, breathes and swishes its tail when idle", "Malla tulki: kursor ortidan yuguradi, dam olganda nafas olib dumini qimirlatadi" } },
             { "Панда-мастер", new[] { "Panda master", "Panda usta" } },
