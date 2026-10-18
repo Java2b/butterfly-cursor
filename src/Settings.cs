@@ -114,6 +114,7 @@ namespace ButterflyCursor
                 new Creature { Id = "commando", Title = L.T("Пиксельный коммандос"), DefaultStyle = MoveStyle.Run, RunFrames = 6, RestSeq = new[] { 0, 0, 0, 0, 3, 0, 0, 0, 1, 2, 1, 2, 1, 2, 0, 0, 0, 3, 0, 0 }, RestStep = 0.16f, Jumps = true, Category = "heroes", Desc = "Герой ретро-игр: бегает, прыгает кувырком, в покое отстреливается" },
                 new Creature { Id = "biker", Title = L.T("Байкер"), DefaultStyle = MoveStyle.Run, RunFrames = 4, RestSeq = new[] { 0, 0, 0, 0, 2, 2, 0, 0, 0, 1, 1, 1, 0, 0 }, RestStep = 0.25f, Category = "vehicles", Desc = "Мчит на мотоцикле, в покое стоит на подножке, машет и газует" },
                 new Creature { Id = "helicopter", Title = L.T("Вертолёт"), DefaultStyle = MoveStyle.Run, RunFrames = 4, RestSeq = new[] { 0, 1 }, RestStep = 0.14f, Flies = true, Category = "vehicles", Desc = "Спасательный вертолёт: летает за мышью, садится у «Пуска»" },
+                new Creature { Id = "attack_heli", Title = L.T("Ударный вертолёт"), DefaultStyle = MoveStyle.Run, RunFrames = 4, RestSeq = new[] { 0, 1 }, RestStep = 0.2f, Flies = true, Category = "vehicles", Desc = "Военный вертолёт с крылышками и ракетами: летает за мышью, садится у «Пуска»" },
                 new Creature { Id = "elephant", Title = L.T("Слонёнок"), DefaultStyle = MoveStyle.Run, RunFrames = 6, RestSeq = new[] { 0, 0, 0, 0, 0, 1, 0, 0, 0, 2, 2, 0, 0, 0, 1, 0 }, RestStep = 0.3f, Category = "animals", Desc = "Пиксельный слонёнок: топает, в покое сидит и машет хоботом" },
                 new Creature { Id = "snake", Title = L.T("Змея"), DefaultStyle = MoveStyle.Crawl, RunFrames = 8, RestSeq = new[] { 0, 0, 0, 0, 1, 0, 1, 0, 0, 0, 0, 0, 0, 1, 2, 1, 0, 0 }, RestStep = 0.18f, Category = "animals", Desc = "Питон, вид сверху: ползёт волной, в покое сворачивается кольцом и показывает язык" },
                 new Creature { Id = "fox", Title = L.T("Лисичка"), DefaultStyle = MoveStyle.Run, RunFrames = 6, RestSeq = new[] { 0, 1, 2, 3, 4, 5 }, RestStep = 0.16f, Category = "animals", Desc = "Рыжая лиса: бегает за курсором, в покое дышит и шевелит хвостом" },
@@ -150,7 +151,7 @@ namespace ButterflyCursor
 
         public static string CreatureId, Lang = "", FlagCode;
         public static int Size, Speed, IdleSec, DustAmount, DustSize, DustLife, DustBright, Aura, AuraRgb;
-        public static bool GoHome, Dust, HideFullscreen, Rainbow, ClickFx, Seasons, Music, NightGlow, DarkTheme;
+        public static bool GoHome, Dust, HideFullscreen, Rainbow, ClickFx, Seasons, Music, NightGlow, DarkTheme, CheckUpdates;
         /// <summary>Dust colours chosen by the user (0xRRGGBB); ignored while Rainbow is on.</summary>
         public static List<int> Colors = new List<int>();
         public const int MaxColors = 12;
@@ -196,7 +197,7 @@ namespace ButterflyCursor
         public static void Defaults()
         {
             Size = 76; Speed = 5; IdleSec = 4; GoHome = true; HideFullscreen = true;
-            ClickFx = false; Seasons = true; Music = false; NightGlow = false;
+            ClickFx = false; Seasons = true; Music = false; NightGlow = false; CheckUpdates = true;
             Dust = true; DustAmount = 50; DustSize = 50; DustLife = 50; DustBright = 100;
             Colors = Preset(0); Rainbow = false; Aura = 0; AuraRgb = 0x78DCFF;
         }
@@ -230,6 +231,7 @@ namespace ButterflyCursor
                     Seasons = Int(k, "Seasons", 1, 0, 1) == 1;
                     Music = Int(k, "Music", 0, 0, 1) == 1;
                     NightGlow = Int(k, "NightGlow", 0, 0, 1) == 1;
+                    CheckUpdates = Int(k, "CheckUpdates", 1, 0, 1) == 1;
                     if (k.GetValue("DarkTheme") != null) DarkTheme = Int(k, "DarkTheme", 0, 0, 1) == 1;
                     DustAmount = Int(k, "DustAmount", DustAmount, 0, 100);
                     DustSize = Int(k, "DustSize", DustSize, 0, 100);
@@ -287,6 +289,7 @@ namespace ButterflyCursor
                     k.SetValue("ClickFx", ClickFx ? 1 : 0); k.SetValue("Seasons", Seasons ? 1 : 0);
                     k.SetValue("Music", Music ? 1 : 0); k.SetValue("NightGlow", NightGlow ? 1 : 0);
                     k.SetValue("DarkTheme", DarkTheme ? 1 : 0);
+                    k.SetValue("CheckUpdates", CheckUpdates ? 1 : 0);
                     k.SetValue("DustAmount", DustAmount); k.SetValue("DustSize", DustSize);
                     k.SetValue("DustLife", DustLife); k.SetValue("DustBright", DustBright);
                     k.SetValue("Aura", Aura); k.SetValue("AuraRgb", AuraRgb); k.SetValue("Rainbow", Rainbow ? 1 : 0);

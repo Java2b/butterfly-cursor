@@ -50,6 +50,17 @@ namespace ButterflyCursor
         }
 
         /// <summary>True when this copy should offer to install itself instead of just running.</summary>
+        /// <summary>After an update the new exe tells Settings → Apps its version.</summary>
+        public static void RefreshVersion()
+        {
+            try
+            {
+                using (RegistryKey k = Registry.CurrentUser.OpenSubKey(UninstallKey, true))
+                    if (k != null && (k.GetValue("DisplayVersion") as string) != Version) k.SetValue("DisplayVersion", Version);
+            }
+            catch { }
+        }
+
         public static bool ShouldOffer()
         {
             string dir = InstalledDir;

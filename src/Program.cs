@@ -48,6 +48,7 @@ namespace ButterflyCursor
                     return;
                 }
                 Apps.Load();
+                Installer.RefreshVersion();
                 Cfg.SyncDesktopMenu();
                 if (Cfg.Autostart) Cfg.Autostart = true;     // keeps the autostart entry pointing at this exe
                 Application.Run(new Overlay());
@@ -383,6 +384,7 @@ namespace ButterflyCursor
             ApplySettings();
             BuildTray();
             Cfg.Changed += ApplySettings;
+            Updater.Start(this);
 
             Native.GetCursorPos(out lastCursor);
             px = lastCursor.X; py = lastCursor.Y;
@@ -625,6 +627,7 @@ namespace ButterflyCursor
             hide.CheckedChanged += delegate { paused = hide.Checked; };
             menu.Items.Add(hide);
 
+            menu.Items.Add(L.T("Проверить обновления"), null, delegate { Updater.Check(this, true); });
             menu.Items.Add(new ToolStripSeparator());
             menu.Items.Add(L.T("Выход"), null, delegate { Close(); });
 

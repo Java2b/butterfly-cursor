@@ -209,6 +209,7 @@ namespace ButterflyCursor
             Wide(desk);
             refreshers.Add(delegate { desk.Checked = Cfg.DesktopMenu; });
             desk.CheckedChanged += delegate { if (!loading) Cfg.DesktopMenu = desk.Checked; };
+            Check(L.T("Сообщать о новых версиях"), delegate { return Cfg.CheckUpdates; }, delegate(bool v) { Cfg.CheckUpdates = v; });
 
             // the buttons stay pinned at the bottom of the window, outside the scrolling list
             buttons.FlowDirection = FlowDirection.RightToLeft;
