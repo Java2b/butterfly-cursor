@@ -120,7 +120,7 @@ namespace ButterflyCursor
             { "Медленно, но верно ползёт к курсору", new[] { "Slowly but surely creeps to the pointer", "Sekin, lekin aniq kursor tomon oʻrmalaydi" } },
             { "Бежит с мечом, в покое медитирует на «Пуске»", new[] { "Runs with a sword, meditates on Start when idle", "Qilich bilan yuguradi, dam olganda «Pusk» ustida meditatsiya qiladi" } },
             { "Бегает на кончиках пальцев", new[] { "Scuttles on its fingertips", "Barmoq uchlarida yuguradi" } },
-            { "Герой ретро-игр: бежит с автоматом, в покое отстреливается", new[] { "A retro game hero: runs with a rifle, fires away when idle", "Retro oʻyin qahramoni: avtomat bilan yuguradi, dam olganda oʻq uzadi" } },
+            { "Герой ретро-игр: бегает, прыгает кувырком, в покое отстреливается", new[] { "A retro game hero: runs, somersaults, fires away when idle", "Retro oʻyin qahramoni: yuguradi, umbaloq oshib sakraydi, dam olganda oʻq uzadi" } },
             { "Рестлер в маске, в покое играет мышцами", new[] { "A masked wrestler who flexes when idle", "Niqobli kurashchi, dam olganda muskullarini oʻynatadi" } },
             { "Летает и машет крыльями, в покое спит калачиком", new[] { "Flies flapping its wings, sleeps curled up when idle", "Qanot qoqib uchadi, dam olganda yumaloq boʻlib uxlaydi" } },
             { "Парит рядом, моргает и иногда рычит", new[] { "Floats nearby, blinks and roars now and then", "Yonida suzadi, koʻz qisadi va baʻzan oʻkiradi" } },

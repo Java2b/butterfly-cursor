@@ -288,6 +288,9 @@ namespace ButterflyCursor
         // click reactions
         bool mouseWasDown;
         float hopT, flipT;
+        // somersault jump (the commando): frames jumpFirst..jumpFirst+3 are quarter turns
+        const float JumpLen = 0.62f;
+        bool jumps; int jumpFirst; float jumpT; double nextJump, lastJump;
         readonly List<Shot> shots = new List<Shot>();
         // easter eggs: circles make it dizzy (then it sits on the pointer), shaking scares it away
         const float DizzyLen = 7f;
@@ -420,6 +423,7 @@ namespace ButterflyCursor
             idleFrame = n >= 3 && n % 2 == 1 ? n - 1 : 0;
             runFrames = idleFrame > 0 ? n - 1 : n;
             restSeq = null; flies = c.Flies; restStep = c.RestStep;
+            jumps = c.Jumps && n >= 5; jumpFirst = n - 4; jumpT = 0;
             if (c.RunFrames > 0 && c.RunFrames < n)
             {
                 runFrames = c.RunFrames;
@@ -849,11 +853,13 @@ namespace ButterflyCursor
                     shots.Add(new Shot { X = sx, Y = sy, Vx = ddx / len * v, Vy = ddy / len * v, Life = len / v });
                 }
                 else if (style == MoveStyle.Fly || style == MoveStyle.Float || style == MoveStyle.Wave || style == MoveStyle.Crawl) flipT = 0.6f;
+                else if (jumps && style == MoveStyle.Run && !resting) jumpT = JumpLen;
                 else hopT = 0.45f;
             }
             mouseWasDown = down;
             if (hopT > 0) hopT = Math.Max(0, hopT - dt);
             if (flipT > 0) flipT = Math.Max(0, flipT - dt);
+            if (jumpT > 0) jumpT = Math.Max(0, jumpT - dt);
 
             for (int i = shots.Count - 1; i >= 0; i--)
             {
@@ -926,6 +932,7 @@ namespace ButterflyCursor
             // what all of this does to the creature on screen
             float hop = hopT > 0 ? (float)Math.Sin(Math.PI * (1 - hopT / 0.45f)) : 0f;
             funLift = S * (0.35f * hop + 0.12f * beat);
+            if (jumpT > 0) funLift += S * 0.85f * (float)Math.Sin(Math.PI * (1 - jumpT / JumpLen));
             spinDeg = 0f;
             if (flipT > 0) spinDeg = 360f * (1f - flipT / 0.6f);
             if (dizzyT > DizzyLen - 1.2f) spinDeg = (float)(now * 900 % 360);
@@ -1118,6 +1125,14 @@ namespace ButterflyCursor
                 speed = (float)Math.Sqrt(vx * vx + vy * vy);
             }
 
+            // the commando jumps with a somersault when the pointer goes up, and now and then while running
+            if (jumps && style == MoveStyle.Run && !resting && !idle && jumpT <= 0 && moving > 0.4f)
+            {
+                bool up = ty < py - S * 0.6f && vy < -60f * dpi && now - lastJump > 1.4;
+                if (up || (now > nextJump && nextJump > 0)) { jumpT = JumpLen; lastJump = now; }
+                if (up || now > nextJump) nextJump = now + 3 + rnd.NextDouble() * 5;
+            }
+
             float target = Math.Min(1f, speed / Math.Max(1f, maxSpeed * 0.45f));
             moving += (target - moving) * Math.Min(1f, dt * 8f);
             if (Math.Abs(vx) > 12f * dpi) facing = vx > 0 ? 1f : -1f;
@@ -1215,7 +1230,7 @@ namespace ButterflyCursor
                 else if (now > nextBlink) { blinkT = 0.16f; nextBlink = now + Rand(2.5f, 5f); }
                 headFrame = roarT > 0 ? 2 : blinkT > 0 ? 1 : 0;
             }
-            bool busy = roarT > 0 || blinkT > 0 || (restSeq != null && resting) || raysSprite != null || shots.Count > 0 || hopT > 0 || flipT > 0 || beat > 0 || level > 0.02f || dizzyT > 0;
+            bool busy = roarT > 0 || blinkT > 0 || (restSeq != null && resting) || raysSprite != null || shots.Count > 0 || hopT > 0 || flipT > 0 || jumpT > 0 || beat > 0 || level > 0.02f || dizzyT > 0;
             // full 60 fps only while something moves fast; resting with a few slow particles needs much less
             frameInterval = speed >= 1f || busy ? 1f / 60f : particles.Count == 0 ? 0.05f : 1f / 30f;
             Render(t);
@@ -1444,6 +1459,7 @@ namespace ButterflyCursor
                 else if ((moving > 0.12f || flies) && runFrames > 0)
                     idx = ((int)(phase / 6.2832f * runFrames) % runFrames + runFrames) % runFrames;
                 else if (restSeq != null) idx = 0;              // standing still near the pointer
+                if (jumpT > 0 && jumps) idx = jumpFirst + (int)((1 - jumpT / JumpLen) * 8) % 4;   // two full flips in the air
                 g.TranslateTransform(px, py);
                 g.ScaleTransform(scale, scale);
                 ApplyFun(g);

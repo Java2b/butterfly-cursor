@@ -1,7 +1,7 @@
 # Draws the built-in pixel-art commando (an original 8-bit style run-and-gun hero:
 # red bandana, bare torso with a bandolier, green fatigues, a big rifle).
 # Drawn on a 40x40 pixel grid and scaled 8x with nearest neighbour, so the pixels stay sharp.
-# Strip of 10 square frames: 0-5 run cycle (facing right), 6 standing, 7-8 firing, 9 blinking.
+# Strip of 10 square frames: 0-5 run cycle (facing right), 6 standing, 7-8 firing, 9 blinking, 10-13 somersault.
 # Usage: python tools/make_commando.py
 from PIL import Image, ImageDraw, ImageFilter
 
@@ -187,9 +187,36 @@ def frame(kind, i=0):
     return finish(img)
 
 
+def ball():
+    """The somersault: curled up into a ball, knees to the chest, centred on the frame."""
+    img = Image.new("RGBA", (G, G), (0, 0, 0, 0))
+    d = ImageDraw.Draw(img)
+    d.ellipse((13, 13, 26, 27), fill=SKIN)              # back and shoulders
+    d.ellipse((13, 15, 18, 27), fill=SKIN_D)            # back shading
+    for i in range(10):                                 # bandolier
+        px(d, 16 + i * 7 // 10, 15 + i, BELT if i % 2 else BUCKLE)
+    d.ellipse((19, 19, 28, 27), fill=PANTS)             # tucked thighs
+    px(d, 23, 25, PANTS_D); px(d, 22, 21, PANTS_D)
+    rect(d, 17, 25, 21, 27, BELT)                       # belt peeking out
+    rect(d, 25, 25, 28, 28, BOOT)                       # boots next to the face
+    rect(d, 25, 22, 27, 24, BOOT)
+    rect(d, 20, 12, 26, 18, SKIN)                       # head tucked forward
+    rect(d, 20, 11, 26, 12, HAIR)
+    rect(d, 20, 13, 26, 14, BAND)
+    px(d, 25, 15, EYE)
+    px(d, 19, 14, BAND)                                 # bandana tails trail behind the spin
+    line(d, (19, 14), (15, 10), BAND)
+    line(d, (19, 15), (14, 12), BAND_D)
+    rect(d, 21, 19, 26, 20, GUN)                        # rifle hugged to the chest
+    line(d, (22, 19), (26, 19), GUN_L)
+    return img
+
+
 def main():
     frames = [frame("run", i) for i in range(6)]
     frames += [frame("stand"), frame("fire", 0), frame("fire", 1), frame("blink")]
+    b = ball()
+    frames += [finish(b.rotate(-90 * k)) for k in range(4)]   # forward somersault, a quarter turn per frame
     strip = Image.new("RGBA", (OUT * len(frames), OUT), (0, 0, 0, 0))
     for i, f in enumerate(frames):
         strip.paste(f, (i * OUT, 0))
