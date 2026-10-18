@@ -99,6 +99,8 @@ namespace ButterflyCursor
 
             { "Слонёнок", new[] { "Baby elephant", "Fil bolasi" } },
             { "Лисичка", new[] { "Fox", "Tulkicha" } },
+            { "Чёрный самурай", new[] { "Black samurai", "Qora samuray" } },
+            { "Бежит с катаной, в покое стоит в боевой стойке и рубит воздух", new[] { "Runs with a katana; when idle it stands on guard and cuts the air", "Katana bilan yuguradi, dam olganda jangovar holatda turib havoni kesadi" } },
             { "Да", new[] { "Yes", "Ha" } },
             { "Нет", new[] { "No", "Yoʻq" } },
             { "Загрузка…", new[] { "Downloading…", "Yuklanmoqda…" } },
