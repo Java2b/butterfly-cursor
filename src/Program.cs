@@ -287,6 +287,13 @@ namespace ButterflyCursor
         // somersault jump (the commando): frames jumpFirst..jumpFirst+3 are quarter turns
         const float JumpLen = 0.62f;
         bool jumps; int jumpFirst; float jumpT; double nextJump, lastJump;
+        // the snake is drawn from its own path: the head slithers in waves, the body follows exactly where it went
+        bool snake;
+        readonly List<PointF> trail = new List<PointF>();   // newest point (the head) first
+        float snHead, snSpeed, coilT;
+        double snDist;
+        PointF[] snPts = new PointF[0];
+        float[] snW = new float[0];
         readonly List<Shot> shots = new List<Shot>();
         // easter eggs: circles make it dizzy (then it sits on the pointer), shaking scares it away
         const float DizzyLen = 7f;
@@ -420,6 +427,7 @@ namespace ButterflyCursor
             runFrames = idleFrame > 0 ? n - 1 : n;
             restSeq = null; flies = c.Flies; restStep = c.RestStep;
             jumps = c.Jumps && n >= 5; jumpFirst = n - 4; jumpT = 0;
+            snake = c.Id == "snake"; trail.Clear(); snSpeed = 0; coilT = 0;
             if (c.RunFrames > 0 && c.RunFrames < n)
             {
                 runFrames = c.RunFrames;
@@ -659,6 +667,7 @@ namespace ButterflyCursor
                 // side-view creatures stand on the taskbar edge; the others sit on it
                 float lift = style == MoveStyle.Slide ? 0.30f : style == MoveStyle.Float ? 0.40f
                            : style == MoveStyle.Run ? Math.Max(0.1f, restBottom - 0.5f - 0.02f) : style == MoveStyle.Wave ? 0.48f : 0.12f;
+                if (snake) lift = SnakeCoilR() * 0.8f / S;
                 if (left) p = new PointF(s.Right + S * 0.5f, s.Top + s.Height / 2f);
                 else if (right) p = new PointF(s.Left - S * 0.5f, s.Top + s.Height / 2f);
                 else if (top) p = new PointF(s.Left + s.Width * 0.25f, s.Bottom + S * lift);
@@ -800,6 +809,201 @@ namespace ButterflyCursor
                 p.Rgb = Cfg.DustColor(rnd, now).ToArgb() & 0xFFFFFF;
                 p.Star = rnd.Next(3) == 0;
                 particles.Add(p);
+            }
+        }
+
+        float SnakeLen() { return S * scale * 2.6f; }
+        float SnakeW() { return S * scale * 0.15f; }
+        /// <summary>Radius of the coil it rests in (the body wound up around the head).</summary>
+        float SnakeCoilR() { float w = S * 0.15f; return (float)Math.Sqrt(S * 2.6f * w * 1.1f / Math.PI) + w; }
+
+        static float Wrap(float a)
+        {
+            while (a > Math.PI) a -= (float)(2 * Math.PI);
+            while (a < -Math.PI) a += (float)(2 * Math.PI);
+            return a;
+        }
+
+        /// <summary>The head crawls towards the target along a gentle S-wave; the body is the path it leaves.</summary>
+        float SnakeStep(float tx, float ty, float dist, bool idle, float dt)
+        {
+            float vmax = (40f + 16f * Cfg.Speed) * dpi;
+            if (resting && dist > S * 0.8f) resting = false;
+            if (!resting && idle && dist < Math.Max(4f * dpi, S * 0.12f)) resting = true;
+
+            float moved = 0;
+            if (resting) { snSpeed = 0; vx = vy = 0; }
+            else
+            {
+                // stop beside the pointer instead of circling it; slow down on arrival
+                float stopR = idle ? 0f : S * 0.5f;
+                float want = dist <= stopR ? 0f : Math.Min(vmax, (dist - stopR) * 1.8f + 18f * dpi);
+                snSpeed += (want - snSpeed) * Math.Min(1f, dt * 2.2f);
+                if (snSpeed > 2f * dpi)
+                {
+                    float desired = (float)Math.Atan2(ty - py, tx - px);
+                    float rate = 2.2f + 3.5f * (1f - snSpeed / vmax);          // tighter turns when slow
+                    float diff = Wrap(desired - snHead);
+                    snHead = Wrap(snHead + Math.Max(-rate * dt, Math.Min(rate * dt, diff)));
+                    snDist += snSpeed * dt;
+                    float wave = 0.55f * (float)Math.Sin(snDist / (SnakeLen() * 0.62f) * 2 * Math.PI);
+                    float eff = snHead + wave, step = snSpeed * dt;
+                    px += (float)Math.Cos(eff) * step;
+                    py += (float)Math.Sin(eff) * step;
+                    vx = (float)Math.Cos(snHead) * snSpeed;
+                    vy = (float)Math.Sin(snHead) * snSpeed;
+                    moved = step;
+                }
+                else { vx = vy = 0; }
+            }
+            coilT = Math.Max(0f, Math.Min(1f, coilT + (resting ? dt / 1.6f : -dt / 0.5f)));
+
+            // the path: a new point whenever the head has moved a little; trimmed to the body length
+            if (trail.Count == 0)
+                for (int i = 0; i < 40; i++) trail.Add(new PointF(px - (float)Math.Cos(snHead) * i * 4f, py - (float)Math.Sin(snHead) * i * 4f));
+            float lx = px - trail[0].X, ly = py - trail[0].Y;
+            if (lx * lx + ly * ly >= 2.25f * dpi * dpi) trail.Insert(0, new PointF(px, py));
+            else trail[0] = new PointF(px, py);
+            float need = SnakeLen() + 8f, acc = 0;
+            for (int i = 1; i < trail.Count; i++)
+            {
+                float ddx = trail[i].X - trail[i - 1].X, ddy = trail[i].Y - trail[i - 1].Y;
+                acc += (float)Math.Sqrt(ddx * ddx + ddy * ddy);
+                if (acc > need) { trail.RemoveRange(i + 1, trail.Count - i - 1); break; }
+            }
+            return moved;
+        }
+
+        /// <summary>Points and widths along the body, from the head back, at even spacing; wound into a coil at rest.</summary>
+        void BuildSnake()
+        {
+            float L = SnakeLen(), W = SnakeW(), ds = Math.Max(1.5f, W * 0.3f);
+            int n = Math.Max(8, (int)(L / ds));
+            if (snPts.Length != n) { snPts = new PointF[n]; snW = new float[n]; }
+            if (trail.Count == 0) trail.Add(new PointF(px, py));
+
+            // walk back along the path
+            int seg = 0;
+            PointF a = trail[0];
+            for (int i = 0; i < n; i++)
+            {
+                float d = i * ds;
+                float sFrac = d / L;
+                snW[i] = W * (sFrac < 0.06f ? 0.68f + 0.32f * sFrac / 0.06f : sFrac < 0.45f ? 1f : (float)Math.Pow(Math.Max(0.07, 1 - (sFrac - 0.45f) / 0.55f), 0.9));
+                if (i == 0) { snPts[0] = a; continue; }
+                float left = ds;
+                while (left > 0)
+                {
+                    if (seg + 1 >= trail.Count)
+                    {
+                        // path too short yet: continue straight behind
+                        float bx = (float)Math.Cos(snHead), by = (float)Math.Sin(snHead);
+                        if (seg > 0) { float qx = trail[seg].X - trail[seg - 1].X, qy = trail[seg].Y - trail[seg - 1].Y, ql = (float)Math.Sqrt(qx * qx + qy * qy); if (ql > 0.01f) { bx = -qx / ql; by = -qy / ql; } }
+                        a = new PointF(a.X - bx * left, a.Y - by * left);
+                        left = 0;
+                        break;
+                    }
+                    PointF b = trail[seg + 1];
+                    float sx = b.X - a.X, sy = b.Y - a.Y, sl = (float)Math.Sqrt(sx * sx + sy * sy);
+                    if (sl <= left) { left -= sl; a = b; seg++; }
+                    else { a = new PointF(a.X + sx / sl * left, a.Y + sy / sl * left); left = 0; }
+                }
+                snPts[i] = a;
+            }
+
+            // at rest the body winds up into a coil around the head
+            if (coilT > 0)
+            {
+                float e = coilT * coilT * (3 - 2 * coilT);
+                float r = W * 0.85f, th = snHead + (float)Math.PI * 0.5f, b = W * 1.1f;
+                for (int i = 1; i < n; i++)
+                {
+                    th += ds / r;
+                    r += b / (float)(2 * Math.PI) * (ds / r);
+                    float cx = px + (float)Math.Cos(th) * r, cy = py + (float)Math.Sin(th) * r * 0.92f;
+                    snPts[i] = new PointF(snPts[i].X + (cx - snPts[i].X) * e, snPts[i].Y + (cy - snPts[i].Y) * e);
+                }
+            }
+        }
+
+        static readonly Color SnOutline = Color.FromArgb(16, 34, 16), SnDark = Color.FromArgb(50, 102, 40), SnSkin = Color.FromArgb(86, 152, 62),
+            SnLight = Color.FromArgb(150, 204, 96), SnBlotch = Color.FromArgb(36, 72, 30),
+            SnEye = Color.FromArgb(244, 204, 62), SnTongue = Color.FromArgb(222, 40, 64);
+
+        void DrawSnake(Graphics g)
+        {
+            BuildSnake();
+            int n = snPts.Length;
+            float W = SnakeW(), ol = Math.Max(1.2f, W * 0.08f);
+            using (var bOut = new SolidBrush(SnOutline))
+            using (var bDark = new SolidBrush(SnDark))
+            using (var bSkin = new SolidBrush(SnSkin))
+            using (var bLight = new SolidBrush(SnLight))
+            using (var bBlotch = new SolidBrush(SnBlotch))
+            {
+                // the body as round-capped strokes between the points: outline, dark sides, skin, pattern, spine light
+                using (var pen = new Pen(SnOutline))
+                {
+                    pen.StartCap = pen.EndCap = LineCap.Round;
+                    pen.LineJoin = LineJoin.Round;
+                    Action<Color, float, float, float, float> stroke = delegate(Color c, float k, float add, float ox, float oy)
+                    {
+                        pen.Color = c;
+                        for (int i = n - 1; i >= 1; i--)
+                        {
+                            pen.Width = Math.Max(0.8f, (snW[i] + snW[i - 1]) * 0.5f * k + add);
+                            g.DrawLine(pen, snPts[i].X + ox * snW[i], snPts[i].Y + oy * snW[i], snPts[i - 1].X + ox * snW[i - 1], snPts[i - 1].Y + oy * snW[i - 1]);
+                        }
+                    };
+                    stroke(SnOutline, 1f, ol * 2, 0, 0);
+                    stroke(SnDark, 1f, 0, 0, 0);
+                    stroke(SnSkin, 0.7f, 0, 0, 0);
+                    // dark patches along the back, staggered a little left and right, fixed to the body
+                    pen.Color = SnBlotch;
+                    int step = Math.Max(3, n / 16), len = Math.Max(1, step / 2);
+                    for (int i = step / 2, k = 0; i + len < n; i += step, k++)
+                    {
+                        float w = snW[i];
+                        if (w < W * 0.35f) continue;
+                        float tx = snPts[i].X - snPts[i + len].X, ty = snPts[i].Y - snPts[i + len].Y, tl = (float)Math.Sqrt(tx * tx + ty * ty);
+                        if (tl < 0.01f) continue;
+                        float nx = -ty / tl, ny = tx / tl, off = (k % 2 == 0 ? 0.13f : -0.13f) * w;
+                        pen.Width = w * 0.42f;
+                        g.DrawLine(pen, snPts[i].X + nx * off, snPts[i].Y + ny * off, snPts[i + len].X + nx * off, snPts[i + len].Y + ny * off);
+                    }
+                    stroke(SnLight, 0.14f, 0, -0.1f, -0.1f);
+                }
+
+                // the head, pointing along the front of the body
+                PointF h = snPts[0], h2 = snPts[Math.Min(n - 1, 3)];
+                float ang = (float)(Math.Atan2(h.Y - h2.Y, h.X - h2.X) * 180 / Math.PI);
+                GraphicsState st = g.Save();
+                g.TranslateTransform(h.X, h.Y);
+                g.RotateTransform(ang);
+                float hl = W * 1.5f, hw = W * 1.16f;
+                double now = clock.Elapsed.TotalSeconds;
+                bool tongue = (now % 2.4) < 0.28 || (resting && (now % 1.5) < 0.22);
+                if (tongue)
+                    using (var tp = new Pen(SnTongue, Math.Max(1.2f, W * 0.08f)))
+                    {
+                        float x0 = hl * 0.62f, x1 = hl * 1.15f;
+                        g.DrawLine(tp, x0, 0, x1, 0);
+                        g.DrawLine(tp, x1, 0, x1 + W * 0.25f, -W * 0.14f);
+                        g.DrawLine(tp, x1, 0, x1 + W * 0.25f, W * 0.14f);
+                    }
+                g.FillEllipse(bOut, -hl * 0.45f - ol, -hw / 2 - ol, hl + ol * 2, hw + ol * 2);
+                g.FillEllipse(bDark, -hl * 0.45f, -hw / 2, hl, hw);
+                g.FillEllipse(bSkin, -hl * 0.38f, -hw * 0.36f, hl * 0.86f, hw * 0.72f);
+                g.FillPolygon(bBlotch, new[] { new PointF(-hl * 0.32f, -hw * 0.14f), new PointF(-hl * 0.32f, hw * 0.14f), new PointF(hl * 0.05f, 0) });
+                using (var eye = new SolidBrush(SnEye))
+                    for (int sgn = -1; sgn <= 1; sgn += 2)
+                    {
+                        float ex = hl * 0.22f, ey = sgn * hw * 0.36f, er = W * 0.17f;
+                        g.FillEllipse(bOut, ex - er - ol * 0.6f, ey - er - ol * 0.6f, (er + ol * 0.6f) * 2, (er + ol * 0.6f) * 2);
+                        g.FillEllipse(eye, ex - er, ey - er, er * 2, er * 2);
+                        g.FillEllipse(bOut, ex - er * 0.25f, ey - er * 0.85f, er * 0.5f, er * 1.7f);
+                    }
+                g.Restore(st);
             }
         }
 
@@ -1094,28 +1298,36 @@ namespace ButterflyCursor
             float dist = (float)Math.Sqrt(dx * dx + dy * dy);
             float speed = (float)Math.Sqrt(vx * vx + vy * vy);
 
-            if (idle && !resting && dist < 3f * dpi && speed < 40f * dpi) resting = true;
-            if (resting && dist > 6f * dpi) resting = false;      // taskbar moved or other monitor
-
             float moved = 0;
-            if (resting)
+            if (snake)
             {
-                px = tx; py = ty; vx = vy = 0; speed = 0;
+                moved = SnakeStep(tx, ty, dist, idle, dt);
+                speed = snSpeed;
             }
             else
             {
-                // steer towards the target: full speed far away, slowing down on arrival,
-                // with limited acceleration so that take-off is not a sudden jump
-                float wantSpeed = Math.Min(maxSpeed, dist * arrive);
-                float wx = dist > 0.01f ? dx / dist * wantSpeed : 0, wy = dist > 0.01f ? dy / dist * wantSpeed : 0;
-                float ax = (wx - vx) * 7f, ay = (wy - vy) * 7f;
-                float acc = (float)Math.Sqrt(ax * ax + ay * ay), maxAcc = maxSpeed * 3.5f;
-                if (acc > maxAcc) { ax *= maxAcc / acc; ay *= maxAcc / acc; }
-                vx += ax * dt; vy += ay * dt;
-                float ox = px, oy = py;
-                px += vx * dt; py += vy * dt;
-                moved = (float)Math.Sqrt((px - ox) * (px - ox) + (py - oy) * (py - oy));
-                speed = (float)Math.Sqrt(vx * vx + vy * vy);
+                if (idle && !resting && dist < 3f * dpi && speed < 40f * dpi) resting = true;
+                if (resting && dist > 6f * dpi) resting = false;      // taskbar moved or other monitor
+
+                if (resting)
+                {
+                    px = tx; py = ty; vx = vy = 0; speed = 0;
+                }
+                else
+                {
+                    // steer towards the target: full speed far away, slowing down on arrival,
+                    // with limited acceleration so that take-off is not a sudden jump
+                    float wantSpeed = Math.Min(maxSpeed, dist * arrive);
+                    float wx = dist > 0.01f ? dx / dist * wantSpeed : 0, wy = dist > 0.01f ? dy / dist * wantSpeed : 0;
+                    float ax = (wx - vx) * 7f, ay = (wy - vy) * 7f;
+                    float acc = (float)Math.Sqrt(ax * ax + ay * ay), maxAcc = maxSpeed * 3.5f;
+                    if (acc > maxAcc) { ax *= maxAcc / acc; ay *= maxAcc / acc; }
+                    vx += ax * dt; vy += ay * dt;
+                    float ox = px, oy = py;
+                    px += vx * dt; py += vy * dt;
+                    moved = (float)Math.Sqrt((px - ox) * (px - ox) + (py - oy) * (py - oy));
+                    speed = (float)Math.Sqrt(vx * vx + vy * vy);
+                }
             }
 
             // the commando jumps with a somersault when the pointer goes up, and now and then while running
@@ -1227,6 +1439,16 @@ namespace ButterflyCursor
         {
             float r = S * (AuraNow > 0 ? 1.05f : 0.80f) * pulse + funLift;
             float minX = px - r, minY = py - r, maxX = px + r, maxY = py + r;
+            if (snake)
+            {
+                BuildSnake();
+                float sw = SnakeW() * 1.5f;
+                foreach (PointF q in snPts)
+                {
+                    minX = Math.Min(minX, q.X - sw); minY = Math.Min(minY, q.Y - sw);
+                    maxX = Math.Max(maxX, q.X + sw); maxY = Math.Max(maxY, q.Y + sw);
+                }
+            }
             foreach (Particle p in particles)
             {
                 float pr = p.Size * 9f;
@@ -1386,6 +1608,7 @@ namespace ButterflyCursor
 
         void DrawCreature(Graphics g)
         {
+            if (snake) { DrawSnake(g); return; }
             GraphicsState state = g.Save();
             float half = S / 2f;
 
