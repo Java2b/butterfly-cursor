@@ -290,7 +290,8 @@ namespace ButterflyCursor
         // the snake is drawn from its own path: the head slithers in waves, the body follows exactly where it went
         bool snake;
         readonly List<PointF> trail = new List<PointF>();   // newest point (the head) first
-        float snHead, snSpeed, coilT;
+        float snHead, snSpeed, coilT, snLoopT, snLoopDir = 1f;
+        double snNextLoop;
         double snDist;
         PointF[] snPts = new PointF[0];
         float[] snW = new float[0];
@@ -839,14 +840,34 @@ namespace ButterflyCursor
                 float stopR = idle ? 0f : S * 0.5f;
                 float want = dist <= stopR ? 0f : Math.Min(vmax, (dist - stopR) * 1.8f + 18f * dpi);
                 snSpeed += (want - snSpeed) * Math.Min(1f, dt * 2.2f);
+                // now and then, while the pointer rests, it curls round in a loop and crawls over its own body
+                double now = clock.Elapsed.TotalSeconds;
+                if (idle) snLoopT = 0;
+                else if (snLoopT > 0) snLoopT -= dt;
+                else if (dist <= stopR * 1.3f && now - lastMove > 1.2 && now > snNextLoop)
+                {
+                    if (snNextLoop <= 0) snNextLoop = now + 1.5;
+                    else { snLoopT = Rand(2.2f, 3.6f); snLoopDir = rnd.Next(2) == 0 ? 1f : -1f; snNextLoop = now + Rand(4f, 7f); }
+                }
+                if (snLoopT > 0) snSpeed += (vmax * 0.75f - snSpeed) * Math.Min(1f, dt * 2.5f);
                 if (snSpeed > 2f * dpi)
                 {
-                    float desired = (float)Math.Atan2(ty - py, tx - px);
-                    float rate = 2.2f + 3.5f * (1f - snSpeed / vmax);          // tighter turns when slow
-                    float diff = Wrap(desired - snHead);
-                    snHead = Wrap(snHead + Math.Max(-rate * dt, Math.Min(rate * dt, diff)));
+                    float waveAmp = 0.55f;
+                    if (snLoopT > 0)
+                    {
+                        // a tight circle: smaller than the body is long, so the head passes over the tail
+                        snHead = Wrap(snHead + snLoopDir * snSpeed / (S * scale * 0.32f) * dt);
+                        waveAmp = 0.12f;
+                    }
+                    else
+                    {
+                        float desired = (float)Math.Atan2(ty - py, tx - px);
+                        float rate = 2.2f + 3.5f * (1f - snSpeed / vmax);          // tighter turns when slow
+                        float diff = Wrap(desired - snHead);
+                        snHead = Wrap(snHead + Math.Max(-rate * dt, Math.Min(rate * dt, diff)));
+                    }
                     snDist += snSpeed * dt;
-                    float wave = 0.55f * (float)Math.Sin(snDist / (SnakeLen() * 0.62f) * 2 * Math.PI);
+                    float wave = waveAmp * (float)Math.Sin(snDist / (SnakeLen() * 0.62f) * 2 * Math.PI);
                     float eff = snHead + wave, step = snSpeed * dt;
                     px += (float)Math.Cos(eff) * step;
                     py += (float)Math.Sin(eff) * step;
@@ -861,9 +882,10 @@ namespace ButterflyCursor
             // the path: a new point whenever the head has moved a little; trimmed to the body length
             if (trail.Count == 0)
                 for (int i = 0; i < 40; i++) trail.Add(new PointF(px - (float)Math.Cos(snHead) * i * 4f, py - (float)Math.Sin(snHead) * i * 4f));
-            float lx = px - trail[0].X, ly = py - trail[0].Y;
+            // trail[0] always follows the head; a point is left behind each time it gets far enough from the last one
+            trail[0] = new PointF(px, py);
+            float lx = px - trail[1].X, ly = py - trail[1].Y;
             if (lx * lx + ly * ly >= 2.25f * dpi * dpi) trail.Insert(0, new PointF(px, py));
-            else trail[0] = new PointF(px, py);
             float need = SnakeLen() + 8f, acc = 0;
             for (int i = 1; i < trail.Count; i++)
             {
@@ -930,6 +952,51 @@ namespace ButterflyCursor
             SnLight = Color.FromArgb(150, 204, 96), SnBlotch = Color.FromArgb(36, 72, 30),
             SnEye = Color.FromArgb(244, 204, 62), SnTongue = Color.FromArgb(222, 40, 64);
 
+        /// <summary>Dark patches along the back, staggered left and right, fixed to the body; only those in from..to.</summary>
+        void SnakeBlotches(Graphics g, Pen pen, float W, int from, int to)
+        {
+            int n = snPts.Length;
+            pen.Color = SnBlotch;
+            int step = Math.Max(3, n / 16), len = Math.Max(1, step / 2);
+            for (int i = step / 2, k = 0; i + len < n; i += step, k++)
+            {
+                if (i < from || i + len > to) continue;
+                float w = snW[i];
+                if (w < W * 0.35f) continue;
+                float tx = snPts[i].X - snPts[i + len].X, ty = snPts[i].Y - snPts[i + len].Y, tl = (float)Math.Sqrt(tx * tx + ty * ty);
+                if (tl < 0.01f) continue;
+                float nx = -ty / tl, ny = tx / tl, off = (k % 2 == 0 ? 0.13f : -0.13f) * w;
+                pen.Width = w * 0.42f;
+                g.DrawLine(pen, snPts[i].X + nx * off, snPts[i].Y + ny * off, snPts[i + len].X + nx * off, snPts[i + len].Y + ny * off);
+            }
+        }
+
+        /// <summary>One stretch of the body drawn again on top (where it crosses itself); flat ends, so no seams.</summary>
+        void DrawSnakeRun(Graphics g, int a, int b, float W, float ol)
+        {
+            if (b - a < 1) return;
+            var pts = new PointF[b - a + 1];
+            var ridge = new PointF[b - a + 1];
+            float sum = 0;
+            for (int i = a; i <= b; i++)
+            {
+                pts[i - a] = snPts[i];
+                ridge[i - a] = new PointF(snPts[i].X - snW[i] * 0.1f, snPts[i].Y - snW[i] * 0.1f);
+                sum += snW[i];
+            }
+            float w = sum / pts.Length;
+            using (var pen = new Pen(SnOutline, w + ol * 2) { LineJoin = LineJoin.Round })
+            {
+                g.DrawLines(pen, pts);
+                pen.Color = SnDark; pen.Width = w; g.DrawLines(pen, pts);
+                pen.Color = SnSkin; pen.Width = w * 0.7f; g.DrawLines(pen, pts);
+                pen.StartCap = pen.EndCap = LineCap.Round;
+                SnakeBlotches(g, pen, W, a, b);
+                pen.StartCap = pen.EndCap = LineCap.Flat;
+                pen.Color = SnLight; pen.Width = Math.Max(0.8f, w * 0.14f); g.DrawLines(pen, ridge);
+            }
+        }
+
         void DrawSnake(Graphics g)
         {
             BuildSnake();
@@ -958,50 +1025,78 @@ namespace ButterflyCursor
                     stroke(SnOutline, 1f, ol * 2, 0, 0);
                     stroke(SnDark, 1f, 0, 0, 0);
                     stroke(SnSkin, 0.7f, 0, 0, 0);
-                    // dark patches along the back, staggered a little left and right, fixed to the body
-                    pen.Color = SnBlotch;
-                    int step = Math.Max(3, n / 16), len = Math.Max(1, step / 2);
-                    for (int i = step / 2, k = 0; i + len < n; i += step, k++)
-                    {
-                        float w = snW[i];
-                        if (w < W * 0.35f) continue;
-                        float tx = snPts[i].X - snPts[i + len].X, ty = snPts[i].Y - snPts[i + len].Y, tl = (float)Math.Sqrt(tx * tx + ty * ty);
-                        if (tl < 0.01f) continue;
-                        float nx = -ty / tl, ny = tx / tl, off = (k % 2 == 0 ? 0.13f : -0.13f) * w;
-                        pen.Width = w * 0.42f;
-                        g.DrawLine(pen, snPts[i].X + nx * off, snPts[i].Y + ny * off, snPts[i + len].X + nx * off, snPts[i + len].Y + ny * off);
-                    }
+                    SnakeBlotches(g, pen, W, 0, n - 1);
                     stroke(SnLight, 0.14f, 0, -0.1f, -0.1f);
                 }
 
-                // the head, pointing along the front of the body
+                // where the front part crosses the body further back, draw it again on top: it crawls over itself
+                int gap = (int)(2.4f / 0.3f) + 2;
+                var over = new bool[n];
+                for (int i = 0; i < n; i++)
+                    for (int j = i + gap; j < n; j++)
+                    {
+                        float ddx = snPts[i].X - snPts[j].X, ddy = snPts[i].Y - snPts[j].Y, rr = (snW[i] + snW[j]) * 0.5f;
+                        if (ddx * ddx + ddy * ddy < rr * rr) { over[i] = true; break; }
+                    }
+                for (int i = 0; i < n; i++)
+                {
+                    if (!over[i]) continue;
+                    int a = i;
+                    while (i + 1 < n && over[i + 1]) i++;
+                    DrawSnakeRun(g, Math.Max(0, a - 3), Math.Min(n - 1, i + 3), W, ol);
+                }
+
+                // the head seen from above: spade-shaped, widest at the jaws, a rounded snout, eyes on the sides
                 PointF h = snPts[0], h2 = snPts[Math.Min(n - 1, 3)];
                 float ang = (float)(Math.Atan2(h.Y - h2.Y, h.X - h2.X) * 180 / Math.PI);
                 GraphicsState st = g.Save();
                 g.TranslateTransform(h.X, h.Y);
                 g.RotateTransform(ang);
-                float hl = W * 1.5f, hw = W * 1.16f;
+                float hl = W * 1.75f;
                 double now = clock.Elapsed.TotalSeconds;
                 bool tongue = (now % 2.4) < 0.28 || (resting && (now % 1.5) < 0.22);
                 if (tongue)
                     using (var tp = new Pen(SnTongue, Math.Max(1.2f, W * 0.08f)))
                     {
-                        float x0 = hl * 0.62f, x1 = hl * 1.15f;
+                        float x0 = hl * 0.5f, x1 = hl * 0.98f;
                         g.DrawLine(tp, x0, 0, x1, 0);
-                        g.DrawLine(tp, x1, 0, x1 + W * 0.25f, -W * 0.14f);
-                        g.DrawLine(tp, x1, 0, x1 + W * 0.25f, W * 0.14f);
+                        g.DrawLine(tp, x1, 0, x1 + W * 0.25f, -W * 0.15f);
+                        g.DrawLine(tp, x1, 0, x1 + W * 0.25f, W * 0.15f);
                     }
-                g.FillEllipse(bOut, -hl * 0.45f - ol, -hw / 2 - ol, hl + ol * 2, hw + ol * 2);
-                g.FillEllipse(bDark, -hl * 0.45f, -hw / 2, hl, hw);
-                g.FillEllipse(bSkin, -hl * 0.38f, -hw * 0.36f, hl * 0.86f, hw * 0.72f);
-                g.FillPolygon(bBlotch, new[] { new PointF(-hl * 0.32f, -hw * 0.14f), new PointF(-hl * 0.32f, hw * 0.14f), new PointF(hl * 0.05f, 0) });
+                PointF[] shape = {
+                    new PointF(-hl * 0.56f, -W * 0.34f), new PointF(-hl * 0.24f, -W * 0.64f), new PointF(hl * 0.14f, -W * 0.56f),
+                    new PointF(hl * 0.44f, -W * 0.34f), new PointF(hl * 0.56f, 0),
+                    new PointF(hl * 0.44f, W * 0.34f), new PointF(hl * 0.14f, W * 0.56f), new PointF(-hl * 0.24f, W * 0.64f),
+                    new PointF(-hl * 0.56f, W * 0.34f) };
+                using (var path = new GraphicsPath())
+                using (var op = new Pen(SnOutline, ol * 2) { LineJoin = LineJoin.Round })
+                {
+                    path.AddClosedCurve(shape, 0.45f);
+                    g.FillPath(bDark, path);
+                    g.DrawPath(op, path);
+                    GraphicsState s2 = g.Save();
+                    g.TranslateTransform(-hl * 0.03f, 0);
+                    g.ScaleTransform(0.76f, 0.66f);
+                    g.FillPath(bSkin, path);                      // the lighter top of the head
+                    g.Restore(s2);
+                }
+                // dark arrow-head marking pointing forward
+                g.FillPolygon(bBlotch, new[] { new PointF(-hl * 0.5f, -W * 0.27f), new PointF(hl * 0.1f, 0), new PointF(-hl * 0.5f, W * 0.27f), new PointF(-hl * 0.3f, 0) });
+                // light scale plates over the eyes and between them
+                using (var lp = new Pen(SnLight, Math.Max(0.8f, W * 0.06f)))
+                {
+                    g.DrawArc(lp, hl * 0.02f, -W * 0.5f, hl * 0.3f, W * 0.3f, 200, 120);
+                    g.DrawArc(lp, hl * 0.02f, W * 0.2f, hl * 0.3f, W * 0.3f, 40, 120);
+                }
                 using (var eye = new SolidBrush(SnEye))
                     for (int sgn = -1; sgn <= 1; sgn += 2)
                     {
-                        float ex = hl * 0.22f, ey = sgn * hw * 0.36f, er = W * 0.17f;
-                        g.FillEllipse(bOut, ex - er - ol * 0.6f, ey - er - ol * 0.6f, (er + ol * 0.6f) * 2, (er + ol * 0.6f) * 2);
+                        float ex = hl * 0.18f, ey = sgn * W * 0.47f, er = W * 0.15f, eo = er + ol * 0.7f;
+                        g.FillEllipse(bOut, ex - eo, ey - eo, eo * 2, eo * 2);
                         g.FillEllipse(eye, ex - er, ey - er, er * 2, er * 2);
-                        g.FillEllipse(bOut, ex - er * 0.25f, ey - er * 0.85f, er * 0.5f, er * 1.7f);
+                        g.FillEllipse(bOut, ex - er * 0.8f, ey - er * 0.22f, er * 1.6f, er * 0.44f);   // slit pupil
+                        float nx = hl * 0.47f, ny = sgn * W * 0.13f, nr = Math.Max(0.7f, W * 0.04f);   // nostrils
+                        g.FillEllipse(bOut, nx - nr, ny - nr, nr * 2, nr * 2);
                     }
                 g.Restore(st);
             }
@@ -1042,6 +1137,7 @@ namespace ButterflyCursor
             {
                 Burst(cur.X, cur.Y, 18, now);
                 if (loadedId == "elephant") Spray(now);
+                else if (snake && !resting) { snLoopT = 2.6f; snLoopDir = rnd.Next(2) == 0 ? 1f : -1f; }
                 else if (sitSprite != null && !resting)
                 {
                     // the ninja throws a shuriken at the spot
