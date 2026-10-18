@@ -25,6 +25,8 @@ namespace ButterflyCursor
         readonly Timer anim = new Timer { Interval = 33 };
         readonly Random rnd = new Random();
         readonly Dictionary<string, Bitmap> thumbs = new Dictionary<string, Bitmap>();
+        readonly PointF[] snakePts = new PointF[80];
+        readonly float[] snakeW = new float[80];
         readonly Dictionary<string, Preview> previews = new Dictionary<string, Preview>();
         readonly List<float[]> dots = new List<float[]>();   // x, y, vx, vy, life, maxLife, colour index
         List<Creature> items = new List<Creature>();
@@ -222,7 +224,7 @@ namespace ButterflyCursor
             {
                 if (rnd.Next(4) == 0) { float a = Rand(0, 6.28f), r = s * Rand(0.5f, 0.75f); dots.Add(new[] { cx + (float)Math.Cos(a) * r, cy + (float)Math.Sin(a) * r * 0.7f, 0f, 0f, 1.2f, 1.2f, 1f }); }
             }
-            else if (id != "sun" && id != "flag")
+            else if (id != "sun" && id != "flag" && id != "snake")
             {
                 // dust streams away to the left, as if the creature were flying to the right
                 float tx = cx - s * 0.28f, ty = cy + s * 0.08f;
@@ -338,7 +340,22 @@ namespace ButterflyCursor
             g.TranslateTransform(cx, cy);
             Bitmap pic = p.Frames[0];
 
-            if (p.Style == MoveStyle.Run)
+            if (c.Id == "snake")
+            {
+                // the same live snake as on screen, crawling round the stage in waves
+                float W = size * 0.075f, L = size * 1.3f, rx = size * 0.42f, ry = size * 0.24f, R = (rx + ry) * 0.5f;
+                float head = (float)(t * size * 0.32);
+                Func<float, PointF> path = delegate(float back)
+                {
+                    float d = head - back, ang = d / R;
+                    float wave = (float)Math.Sin(d / (L * 0.62f) * 2 * Math.PI) * W * 0.9f;
+                    return new PointF((float)Math.Cos(ang) * (rx + wave), (float)Math.Sin(ang) * (ry + wave));
+                };
+                SnakeArt.Along(path, L, W, snakePts, snakeW);
+                g.SmoothingMode = SmoothingMode.AntiAlias;
+                SnakeArt.Draw(g, snakePts, snakeW, W, t % 2.4 < 0.3);
+            }
+            else if (p.Style == MoveStyle.Run)
             {
                 // a few seconds running (or flying), then the resting animation
                 double cycle = t % 8.0;
