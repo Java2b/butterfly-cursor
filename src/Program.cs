@@ -251,14 +251,10 @@ namespace ButterflyCursor
         Bitmap source, sprite;
         Bitmap[] frames = new Bitmap[0];   // animation frames (a strip picture); frames[0] == sprite
         int runFrames = 1, idleFrame;
-        int[] restSeq;                     // resting animation (panda eating, dragon sleeping…)
+        int[] restSeq;                     // resting animation (panda eating, elephant blinking…)
         float restStep = 0.8f, restBottom = 1f;
         bool flies;
         double restSince;
-        // lion head: blinking and roaring
-        float roarT, blinkT;
-        double nextRoar = 8, nextBlink = 3;
-        int headFrame;
         RectangleF content;                // visible part of the sprite, for the flag pole
         Bitmap sitSprite;                  // resting pose (the ninja sitting on Start), if the creature has one
         Bitmap raysSprite;                 // the sun's rays, drawn turning behind it
@@ -807,12 +803,11 @@ namespace ButterflyCursor
             }
         }
 
-        /// <summary>The dragon breathes fire, the elephant sprays water from its trunk.</summary>
-        void Spray(double now, bool fire)
+        /// <summary>The elephant sprays water from its trunk.</summary>
+        void Spray(double now)
         {
             float k = S * scale;
-            float mx = px + facing * k * (fire ? 0.32f : 0.27f), my = py + k * (fire ? -0.12f : 0.18f);
-            int[] fireCols = { 0xFFD24A, 0xFF9A2E, 0xFF5A1F, 0xFFF1A0 };
+            float mx = px + facing * k * 0.27f, my = py + k * 0.18f;
             int[] waterCols = { 0x9FD8FF, 0xD8F1FF, 0x6FBFFF };
             for (int i = 0; i < 34 && particles.Count < 700; i++)
             {
@@ -820,11 +815,11 @@ namespace ButterflyCursor
                 p.X = mx; p.Y = my;
                 float v = Rand(380f, 720f) * dpi;
                 p.Vx = facing * v;
-                p.Vy = fire ? Rand(-90f, 90f) * dpi : Rand(-420f, -160f) * dpi;   // water goes up in an arc
+                p.Vy = Rand(-420f, -160f) * dpi;   // the water goes up in an arc
                 p.MaxLife = p.Life = Rand(0.35f, 0.75f);
                 p.Size = Rand(2.2f, 4f) * dpi;
                 p.Phase = Rand(0, 6.28f);
-                p.Rgb = fire ? fireCols[rnd.Next(fireCols.Length)] : waterCols[rnd.Next(waterCols.Length)];
+                p.Rgb = waterCols[rnd.Next(waterCols.Length)];
                 particles.Add(p);
             }
         }
@@ -842,9 +837,7 @@ namespace ButterflyCursor
             if (clicked && visible && Cfg.ClickFx)
             {
                 Burst(cur.X, cur.Y, 18, now);
-                if (loadedId == "dragon") Spray(now, true);
-                else if (loadedId == "elephant") Spray(now, false);
-                else if (loadedId == "lion_head") roarT = 1.3f;
+                if (loadedId == "elephant") Spray(now);
                 else if (sitSprite != null && !resting)
                 {
                     // the ninja throws a shuriken at the spot
@@ -1222,15 +1215,7 @@ namespace ButterflyCursor
             }
 
             if (!resting) restSince = now;
-            if (loadedId == "lion_head")
-            {
-                if (roarT > 0) roarT = Math.Max(0, roarT - dt);
-                else if (now > nextRoar) { roarT = 1.3f; nextRoar = now + Rand(10f, 18f); }
-                if (blinkT > 0) blinkT = Math.Max(0, blinkT - dt);
-                else if (now > nextBlink) { blinkT = 0.16f; nextBlink = now + Rand(2.5f, 5f); }
-                headFrame = roarT > 0 ? 2 : blinkT > 0 ? 1 : 0;
-            }
-            bool busy = roarT > 0 || blinkT > 0 || (restSeq != null && resting) || raysSprite != null || shots.Count > 0 || hopT > 0 || flipT > 0 || jumpT > 0 || beat > 0 || level > 0.02f || dizzyT > 0;
+            bool busy = (restSeq != null && resting) || raysSprite != null || shots.Count > 0 || hopT > 0 || flipT > 0 || jumpT > 0 || beat > 0 || level > 0.02f || dizzyT > 0;
             // full 60 fps only while something moves fast; resting with a few slow particles needs much less
             frameInterval = speed >= 1f || busy ? 1f / 60f : particles.Count == 0 ? 0.05f : 1f / 30f;
             Render(t);
@@ -1442,9 +1427,7 @@ namespace ButterflyCursor
                     g.Restore(rs);
                 }
                 g.RotateTransform(angle);
-                if (roarT > 0) g.RotateTransform(5f * (float)Math.Sin(clock.Elapsed.TotalSeconds * 45));   // mane shakes while roaring
-                Bitmap pic = headFrame > 0 && headFrame < frames.Length ? frames[headFrame] : sprite;
-                g.DrawImage(pic, -half, -half, S, S);
+                g.DrawImage(sprite, -half, -half, S, S);
             }
             else if (style == MoveStyle.Run)
             {
@@ -1452,7 +1435,7 @@ namespace ButterflyCursor
                 int idx = idleFrame;
                 if (resting && restSeq != null && restSeq.Length > 0)
                 {
-                    // resting animation: the panda eats bamboo, the dragon sleeps, the elephant plays with its trunk
+                    // resting animation: the panda eats bamboo, the elephant sits and blinks, the fox breathes
                     int step = (int)((clock.Elapsed.TotalSeconds - restSince) / restStep) % restSeq.Length;
                     idx = runFrames + restSeq[step];
                 }

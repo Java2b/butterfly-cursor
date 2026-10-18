@@ -28,3 +28,13 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ```
+
+## Pixel-art animals (CC0)
+
+Both are public domain ([CC0 1.0](https://creativecommons.org/publicdomain/zero/1.0/)); credit is given as thanks.
+
+- Baby elephant (`src/elephant.png`): the sitting pose is
+  ["pixel art elephant with costumes and accesories"](https://opengameart.org/content/pixel-art-elephant-with-costumes-and-accesories)
+  by **zonked**. The walking frames are new drawings in the same style (`tools/make_pixel_animals.py`).
+- Fox (`src/fox.png`): from ["Animated Wild Animals"](https://opengameart.org/content/animated-wild-animals)
+  by **ScratchIO**, mirrored and scaled.

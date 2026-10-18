@@ -46,7 +46,7 @@ namespace ButterflyCursor
 Все изменения применяются сразу и сохраняются сами.
 
 # Существа
-В списке «Кто летает за мышью» есть бабочка, жук, паук, улитка, ниндзя с мечом, лучадор в маске, пиксельный коммандос, дракон, голова льва, слонёнок, панда-мастер, рука-помощница, облако с дождём, облако со снегом, солнце, луна и флаг. Список «Как двигается» задаёт способ движения: летает, ползает, скользит, парит, бежит или развевается, как флаг.
+В списке «Кто летает за мышью» есть бабочка, жук, паук, улитка, ниндзя с мечом, лучадор в маске, пиксельный коммандос, слонёнок, лисичка, панда-мастер, рука-помощница, облако с дождём, облако со снегом, солнце, луна и флаг. Список «Как двигается» задаёт способ движения: летает, ползает, скользит, парит, бежит или развевается, как флаг.
 • Флаг своей страны выбирается в списке «Флаг страны» — там все страны мира.
 • Ниндзя бежит за мышью, как в старых играх, а когда мышь стоит — останавливается с мечом.
 
@@ -66,7 +66,7 @@ namespace ButterflyCursor
 
 # Развлечения
 • «Демонстрация для видео» (в настройках и в меню значка) — существо само летает по экрану восьмёрками, мышь не нужна. Удобно записывать ролики. Выключается той же кнопкой.
-• Реакция на клик — искры там, где вы щёлкнули, бабочка делает кувырок, ниндзя бросает сюрикен, дракон выдыхает огонь, слонёнок брызгает водой, лев рычит.
+• Реакция на клик — искры там, где вы щёлкнули, бабочка делает кувырок, ниндзя бросает сюрикен, коммандос прыгает кувырком, слонёнок брызгает водой.
 • Сезонные эффекты — вместе с пыльцой летят снежинки зимой, лепестки сакуры весной, листья осенью, тыквы на Хэллоуин и конфетти на Новый год.
 • Танец под музыку — когда играет звук, существо пританцовывает и пульсирует в такт. Программа только смотрит громкость, ничего не записывает.
 • Ночное свечение — с 20:00 до 6:00 существо светится ярче.
@@ -95,7 +95,7 @@ A small creature that follows your mouse pointer and leaves a trail of glowing d
 Every change is applied at once and saved automatically.
 
 # Creatures
-The “Who follows the mouse” list has a butterfly, a beetle, a spider, a snail, a ninja with a sword, a masked luchador, a pixel commando, a dragon, a lion head, a baby elephant, a panda master, a helper hand, a rain cloud, a snow cloud, the sun, the moon and a flag. “How it moves” sets the way of moving: flies, crawls, glides, floats, runs or waves like a flag.
+The “Who follows the mouse” list has a butterfly, a beetle, a spider, a snail, a ninja with a sword, a masked luchador, a pixel commando, a baby elephant, a fox, a panda master, a helper hand, a rain cloud, a snow cloud, the sun, the moon and a flag. “How it moves” sets the way of moving: flies, crawls, glides, floats, runs or waves like a flag.
 • Choose your country in the “Country flag” list — every country in the world is there.
 • The ninja runs after the mouse like in old games and stops, sword in hand, when the mouse is still.
 
@@ -115,7 +115,7 @@ You can also set the amount, size, brightness and glow time of the dust, and a g
 
 # Fun
 • “Demo for videos” (in the settings and the icon menu) — the creature flies figure eights on its own, no mouse needed. Handy for recording clips. The same button stops it.
-• React to clicks — sparks where you click, the butterfly does a somersault, the ninja throws a shuriken, the dragon breathes fire, the elephant sprays water, the lion roars.
+• React to clicks — sparks where you click, the butterfly does a somersault, the ninja throws a shuriken, the commando somersaults, the elephant sprays water.
 • Seasonal effects — snowflakes in winter, sakura petals in spring, leaves in autumn, pumpkins at Halloween and confetti at New Year fly with the dust.
 • Dance to music — while sound is playing, the creature dances and pulses to the beat. The program only looks at the volume, nothing is recorded.
 • Night glow — from 20:00 to 6:00 the creature shines brighter.
@@ -144,7 +144,7 @@ Sichqoncha koʻrsatkichi ortidan uchib yuradigan va ortidan yaltiroq chang qoldi
 Barcha oʻzgarishlar darhol qoʻllanadi va oʻzi saqlanadi.
 
 # Jonzotlar
-«Sichqoncha ortidan kim yuradi» roʻyxatida kapalak, qoʻngʻiz, oʻrgimchak, shilliqqurt, qilichli ninja, niqobli luchador, piksel komandos, ajdaho, sher boshi, fil bolasi, panda usta, yordamchi qoʻl, yomgʻirli bulut, qorli bulut, quyosh, oy va bayroq bor. «Qanday harakatlanadi» roʻyxati harakat turini belgilaydi: uchadi, oʻrmalaydi, sirpanadi, havoda suzadi, yuguradi yoki bayroqdek hilpiraydi.
+«Sichqoncha ortidan kim yuradi» roʻyxatida kapalak, qoʻngʻiz, oʻrgimchak, shilliqqurt, qilichli ninja, niqobli luchador, piksel komandos, fil bolasi, tulkicha, panda usta, yordamchi qoʻl, yomgʻirli bulut, qorli bulut, quyosh, oy va bayroq bor. «Qanday harakatlanadi» roʻyxati harakat turini belgilaydi: uchadi, oʻrmalaydi, sirpanadi, havoda suzadi, yuguradi yoki bayroqdek hilpiraydi.
 • Oʻz davlatingiz bayrogʻini «Davlat bayrogʻi» roʻyxatidan tanlang — u yerda dunyoning barcha davlatlari bor.
 • Ninja eski oʻyinlardagidek sichqoncha ortidan yuguradi, sichqoncha toʻxtasa — qilichini ushlab toʻxtaydi.
 
@@ -164,7 +164,7 @@ Shuningdek zarrachalarning soni, oʻlchami, yorqinligi va yonish vaqtini, jonzot
 
 # Koʻngilochar
 • «Video uchun namoyish» (sozlamalarda va belgi menyusida) — jonzot ekranda oʻzi sakkizlik chizib uchadi, sichqoncha kerak emas. Video yozish uchun qulay. Xuddi shu tugma bilan toʻxtatiladi.
-• Bosishga javob — bosgan joyingizda uchqunlar, kapalak umbaloq oshadi, ninja shuriken otadi.
+• Bosishga javob — bosgan joyingizda uchqunlar, kapalak umbaloq oshadi, ninja shuriken otadi, komandos umbaloq oshib sakraydi, fil bolasi suv sepadi.
 • Mavsumiy effektlar — chang bilan birga qishda qor parchalari, bahorda sakura gulbarglari, kuzda barglar, Xellouinda qovoqlar va Yangi yilda konfetti uchadi.
 • Musiqaga raqs — ovoz yangraganda jonzot ritmga mos raqs tushadi. Dastur faqat ovoz balandligini kuzatadi, hech narsa yozib olinmaydi.
 • Tungi yogʻdu — 20:00 dan 6:00 gacha jonzot yorqinroq porlaydi.

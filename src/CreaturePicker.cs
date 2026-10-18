@@ -17,8 +17,8 @@ namespace ButterflyCursor
     {
         public event Action<Creature> Picked;
 
-        static readonly string[] CatIds = { "all", "insects", "animals", "heroes", "fantasy", "weather", "flags", "mine" };
-        static readonly string[] CatNames = { "Все", "Насекомые", "Животные", "Герои", "Фэнтези", "Погода", "Флаги", "Мои картинки" };
+        static readonly string[] CatIds = { "all", "insects", "animals", "heroes", "weather", "flags", "mine" };
+        static readonly string[] CatNames = { "Все", "Насекомые", "Животные", "Герои", "Погода", "Флаги", "Мои картинки" };
 
         readonly float k;                                  // DPI scale
         readonly int stageH, sideW, tile, gap, bodyTop, bodyH;
@@ -117,7 +117,7 @@ namespace ButterflyCursor
         static int ThumbFrame(Creature c, int n)
         {
             if (n <= 1) return 0;
-            if (c.RestSeq != null && c.RunFrames < n) return c.Id == "dragon" ? 1 : c.RunFrames + c.RestSeq[Math.Min(c.RestSeq.Length - 1, 2)];
+            if (c.RestSeq != null && c.RunFrames < n) return c.RunFrames + c.RestSeq[Math.Min(c.RestSeq.Length - 1, 2)];
             if (c.Id == "ninja" || c.Id == "hand") return 2;
             return n % 2 == 1 ? n - 1 : 0;
         }
@@ -222,7 +222,7 @@ namespace ButterflyCursor
             {
                 if (rnd.Next(4) == 0) { float a = Rand(0, 6.28f), r = s * Rand(0.5f, 0.75f); dots.Add(new[] { cx + (float)Math.Cos(a) * r, cy + (float)Math.Sin(a) * r * 0.7f, 0f, 0f, 1.2f, 1.2f, 1f }); }
             }
-            else if (id != "lion_head" && id != "sun" && id != "flag")
+            else if (id != "sun" && id != "flag")
             {
                 // dust streams away to the left, as if the creature were flying to the right
                 float tx = cx - s * 0.28f, ty = cy + s * 0.08f;
@@ -393,7 +393,7 @@ namespace ButterflyCursor
             }
             else
             {
-                // floating: gentle bob; the sun turns its rays, the lion blinks and roars
+                // floating: gentle bob; the sun turns its rays
                 g.TranslateTransform(0, (float)Math.Sin(t * 1.8) * 6 * k);
                 if (p.Rays != null)
                 {
@@ -401,12 +401,6 @@ namespace ButterflyCursor
                     g.RotateTransform((float)(t * 14 % 360));
                     g.DrawImage(p.Rays, -half, -half, size, size);
                     g.Restore(rs);
-                }
-                if (c.Id == "lion_head" && p.Frames.Length >= 3)
-                {
-                    double cyc = t % 6.0;
-                    if (cyc > 4.6) { pic = p.Frames[2]; g.RotateTransform(5 * (float)Math.Sin(t * 45)); }
-                    else if (cyc % 2.4 < 0.15) pic = p.Frames[1];
                 }
                 g.DrawImage(pic, -half, -half, size, size);
             }

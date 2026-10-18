@@ -67,7 +67,7 @@ namespace ButterflyCursor
         public float RestStep = 0.8f;      // seconds per resting frame
         public bool Jumps;                 // the last 4 frames are a somersault (quarter turns); it jumps while running
         public bool Flies;                 // side-view frames, but it flies (hovers, keeps flapping)
-        public string Category = "mine";   // insects, animals, heroes, fantasy, weather, flags, mine
+        public string Category = "mine";   // insects, animals, heroes, weather, flags, mine
         public string Desc;                // one line for the preview (Russian source text, translated by L.T)
 
         public Bitmap Load()
@@ -112,9 +112,8 @@ namespace ButterflyCursor
                 new Creature { Id = "hand", Title = L.T("Рука-помощница"), DefaultStyle = MoveStyle.Run, Category = "heroes", Desc = "Бегает на кончиках пальцев" },
                 new Creature { Id = "luchador", Title = L.T("Лучадор «Бабочка»"), DefaultStyle = MoveStyle.Run, Category = "heroes", Desc = "Рестлер в маске, в покое играет мышцами" },
                 new Creature { Id = "commando", Title = L.T("Пиксельный коммандос"), DefaultStyle = MoveStyle.Run, RunFrames = 6, RestSeq = new[] { 0, 0, 0, 0, 3, 0, 0, 0, 1, 2, 1, 2, 1, 2, 0, 0, 0, 3, 0, 0 }, RestStep = 0.16f, Jumps = true, Category = "heroes", Desc = "Герой ретро-игр: бегает, прыгает кувырком, в покое отстреливается" },
-                new Creature { Id = "dragon", Title = L.T("Дракон"), DefaultStyle = MoveStyle.Run, RunFrames = 6, RestSeq = new[] { 0, 1 }, RestStep = 1.0f, Flies = true, Category = "fantasy", Desc = "Летает и машет крыльями, в покое спит калачиком" },
-                new Creature { Id = "lion_head", Title = L.T("Голова льва"), DefaultStyle = MoveStyle.Float, Category = "animals", Desc = "Парит рядом, моргает и иногда рычит" },
-                new Creature { Id = "elephant", Title = L.T("Слонёнок"), DefaultStyle = MoveStyle.Run, RunFrames = 6, RestSeq = new[] { 1, 1, 0, 1 }, RestStep = 1.1f, Category = "animals", Desc = "Топает и играет хоботом" },
+                new Creature { Id = "elephant", Title = L.T("Слонёнок"), DefaultStyle = MoveStyle.Run, RunFrames = 6, RestSeq = new[] { 0, 0, 0, 0, 0, 1, 0, 0, 0, 2, 2, 0, 0, 0, 1, 0 }, RestStep = 0.3f, Category = "animals", Desc = "Пиксельный слонёнок: топает, в покое сидит и машет хоботом" },
+                new Creature { Id = "fox", Title = L.T("Лисичка"), DefaultStyle = MoveStyle.Run, RunFrames = 6, RestSeq = new[] { 0, 1, 2, 3, 4, 5 }, RestStep = 0.16f, Category = "animals", Desc = "Рыжая лиса: бегает за курсором, в покое дышит и шевелит хвостом" },
                 new Creature { Id = "panda", Title = L.T("Панда-мастер"), DefaultStyle = MoveStyle.Run, RunFrames = 6, RestSeq = new[] { 0, 0, 1, 2, 3, 4, 3, 4, 3, 4, 1 }, RestStep = 0.34f, Category = "animals", Desc = "Ходит вразвалку, в покое ест бамбук" },
                 new Creature { Id = "cloud_rain", Title = L.T("Облако с дождём"), DefaultStyle = MoveStyle.Float, Category = "weather", Desc = "Летает за мышью и поливает дождиком" },
                 new Creature { Id = "cloud_snow", Title = L.T("Облако со снегом"), DefaultStyle = MoveStyle.Float, Category = "weather", Desc = "Тихо сыплет снежинки" },
