@@ -365,6 +365,7 @@ namespace ButterflyCursor
                     int f = (int)(t * (c.Flies ? 8 : 11)) % Math.Max(1, p.RunFrames);
                     pic = p.Frames[f];
                     g.TranslateTransform(0, (float)Math.Sin(t * 6) * 4 * k);
+                    if (c.Flies) g.RotateTransform(10);              // flying forward: the nose dips
                 }
                 else if (c.RestSeq != null)
                     pic = p.Frames[Math.Min(p.Frames.Length - 1, p.RunFrames + c.RestSeq[(int)((cycle - 4.0) / c.RestStep) % c.RestSeq.Length])];

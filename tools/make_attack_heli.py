@@ -82,13 +82,30 @@ def heli(frame, landed=False):
     d.ellipse((380, 452 + dy, 404, 476 + dy), fill=OLIVE_D + (255,))                          # a hatch
     d.line([(350, 410 + dy), (590, 372 + dy)], fill=OLIVE_L + (255,), width=6)               # light along the top
 
-    # canopies: the pilot sits higher at the back, the gunner lower in front
-    for pts in ([(560, 360), (640, 316), (716, 338), (722, 404), (560, 410)],
-                [(724, 394), (796, 362), (856, 444), (846, 476), (724, 470)]):
-        glass = shape(lambda m, p=pts: m.polygon([(x, y + dy) for x, y in p], fill=255))
-        put(img, glass, GLASS_T, GLASS_B, min(y for _, y in pts) + dy, max(y for _, y in pts) + dy, 6)
-    d.line([(600, 352 + dy), (660, 330 + dy)], fill=(235, 248, 255, 200), width=7)          # reflections
-    d.line([(760, 392 + dy), (800, 376 + dy)], fill=(235, 248, 255, 200), width=6)
+    # canopies: smooth domes sitting on the body, no corners. The pilot's is higher at the back;
+    # the gunner's lies along the slope of the nose, so its glass faces forward and down
+    def dome(cx, cy, rx, ry, tilt, cut):
+        """An ellipse turned by tilt degrees, keeping only the part above a line through it (cut below the centre)."""
+        e = Image.new("L", (N, N), 0)
+        ImageDraw.Draw(e).ellipse((cx - rx, cy - ry, cx + rx, cy + ry), fill=255)
+        e = e.rotate(-tilt, resample=Image.BICUBIC, center=(cx, cy))
+        half = Image.new("L", (N, N), 0)
+        t = math.radians(tilt)
+        ux, uy = math.cos(t), math.sin(t)                 # along the base line
+        bx, by = cx - uy * -cut, cy + ux * cut            # a point on the base line
+        far = 2000
+        ImageDraw.Draw(half).polygon([(bx - ux * far, by - uy * far), (bx + ux * far, by + uy * far),
+                                      (bx + ux * far + uy * far, by + uy * far - ux * far),
+                                      (bx - ux * far + uy * far, by - uy * far - ux * far)], fill=255)
+        return ImageChops.multiply(e, half).point(lambda v: 255 if v > 128 else 0)
+
+    rear = dome(642, 380 + dy, 84, 58, 4, 14)
+    put(img, rear, GLASS_T, GLASS_B, 322 + dy, 394 + dy, 6)
+    front = dome(796, 430 + dy, 76, 40, 36, 12)
+    put(img, front, GLASS_T, GLASS_B, 380 + dy, 470 + dy, 6)
+    d.line([(724, 352 + dy), (724, 402 + dy)], fill=OUTLINE, width=8)                       # frame between the seats
+    d.arc((590, 334 + dy, 690, 400 + dy), 200, 260, fill=(235, 248, 255, 210), width=7)    # reflections
+    d.arc((744, 398 + dy, 830, 446 + dy), 215, 265, fill=(235, 248, 255, 210), width=6)
 
     # stub wing with a rocket pod and two missiles
     wing = shape(lambda m: m.polygon([(430, 552 + dy), (650, 548 + dy), (660, 578 + dy), (440, 584 + dy)], fill=255))

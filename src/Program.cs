@@ -330,6 +330,7 @@ namespace ButterflyCursor
         // click reactions
         bool mouseWasDown;
         float hopT, flipT;
+        float tilt;                        // helicopters dip the nose towards where they fly
         // somersault jump (the commando): frames jumpFirst..jumpFirst+3 are quarter turns
         const float JumpLen = 0.62f;
         bool jumps; int jumpFirst; float jumpT; double nextJump, lastJump;
@@ -1350,6 +1351,9 @@ namespace ButterflyCursor
             float target = Math.Min(1f, speed / Math.Max(1f, maxSpeed * 0.45f));
             moving += (target - moving) * Math.Min(1f, dt * 8f);
             if (Math.Abs(vx) > 12f * dpi) facing = vx > 0 ? 1f : -1f;
+            // flying side-view creatures lean forward: more when fast, level when hovering or landed
+            float tiltWant = flies && !resting ? 14f * Math.Min(1f, Math.Abs(vx) / Math.Max(1f, maxSpeed * 0.5f)) : 0f;
+            tilt += (tiltWant - tilt) * Math.Min(1f, dt * 3f);
 
             // heading: nose points where it goes
             bool turning = speed > (style == MoveStyle.Fly ? 70f : 12f) * dpi;
@@ -1705,6 +1709,7 @@ namespace ButterflyCursor
                 else
                 {
                     g.ScaleTransform(facing, 1f);
+                    if (tilt > 0.1f) g.RotateTransform(tilt);      // nose down, in either direction
                     g.DrawImage(frames[Math.Min(idx, frames.Length - 1)], -half, -half, S, S);
                 }
             }
