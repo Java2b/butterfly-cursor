@@ -6,7 +6,6 @@ using System.Drawing.Drawing2D;
 using System.Drawing.Imaging;
 using System.Runtime.InteropServices;
 using System.Threading;
-using System.Windows.Automation;
 using System.Windows.Forms;
 using Microsoft.Win32;
 
@@ -163,6 +162,59 @@ namespace ButterflyCursor
     /// Finds the Start button of every taskbar (main one and the ones on extra monitors),
     /// for the Windows 11 XAML taskbar and the classic Windows 10 one.
     /// </summary>
+    /// <summary>
+    /// The bit of UI Automation we need, straight through COM (UIAutomationCore.dll), so the WPF
+    /// libraries the managed wrappers drag in (PresentationCore, WindowsBase, System.Xml) are never loaded.
+    /// </summary>
+    static class Uia
+    {
+        [ComImport, Guid("30cbe57d-d9d0-452a-ab13-7ac5ac4825ee"), InterfaceType(ComInterfaceType.InterfaceIsIUnknown)]
+        interface IUIAutomation
+        {
+            void CompareElements(); void CompareRuntimeIds(); void GetRootElement();
+            [return: MarshalAs(UnmanagedType.Interface)] IUIAutomationElement ElementFromHandle(IntPtr hwnd);
+            void ElementFromPoint(); void GetFocusedElement(); void GetRootElementBuildCache(); void ElementFromHandleBuildCache();
+            void ElementFromPointBuildCache(); void GetFocusedElementBuildCache(); void CreateTreeWalker();
+            void ControlViewWalker(); void ContentViewWalker(); void RawViewWalker(); void RawViewCondition();
+            void ControlViewCondition(); void ContentViewCondition(); void CreateCacheRequest();
+            void CreateTrueCondition(); void CreateFalseCondition();
+            [return: MarshalAs(UnmanagedType.IUnknown)] object CreatePropertyCondition(int propertyId, [MarshalAs(UnmanagedType.Struct)] object value);
+        }
+
+        [ComImport, Guid("d22108aa-8ac5-49a5-837b-37bbb3d7591e"), InterfaceType(ComInterfaceType.InterfaceIsIUnknown)]
+        interface IUIAutomationElement
+        {
+            void SetFocus(); void GetRuntimeId();
+            [return: MarshalAs(UnmanagedType.Interface)] IUIAutomationElement FindFirst(int scope, [MarshalAs(UnmanagedType.IUnknown)] object condition);
+            void FindAll(); void FindFirstBuildCache(); void FindAllBuildCache(); void BuildUpdatedCache();
+            [return: MarshalAs(UnmanagedType.Struct)] object GetCurrentPropertyValue(int propertyId);
+        }
+
+        [ComImport, Guid("ff48dba4-60ef-4201-aa87-54103eef594e")]
+        class CUIAutomation { }
+
+        const int AutomationIdProperty = 30011, BoundingRectangleProperty = 30001, TreeScopeDescendants = 4;
+        static IUIAutomation uia;
+
+        public static bool FindById(IntPtr hwnd, string id, out Rectangle rect)
+        {
+            rect = Rectangle.Empty;
+            if (uia == null) uia = (IUIAutomation)new CUIAutomation();
+            IUIAutomationElement root = uia.ElementFromHandle(hwnd);
+            if (root == null) return false;
+            object cond = uia.CreatePropertyCondition(AutomationIdProperty, id);
+            IUIAutomationElement el = root.FindFirst(TreeScopeDescendants, cond);
+            Marshal.ReleaseComObject(root);
+            if (cond != null) Marshal.ReleaseComObject(cond);
+            if (el == null) return false;
+            double[] r = el.GetCurrentPropertyValue(BoundingRectangleProperty) as double[];
+            Marshal.ReleaseComObject(el);
+            if (r == null || r.Length < 4) return false;
+            rect = new Rectangle((int)r[0], (int)r[1], (int)r[2], (int)r[3]);
+            return true;
+        }
+    }
+
     static class StartButton
     {
         /// <returns>Start button rectangle per monitor device name.</returns>
@@ -198,15 +250,8 @@ namespace ButterflyCursor
         {
             try
             {
-                AutomationElement root = AutomationElement.FromHandle(tray);
-                AutomationElement el = root.FindFirst(TreeScope.Descendants,
-                    new PropertyCondition(AutomationElement.AutomationIdProperty, "StartButton"));
-                if (el != null)
-                {
-                    System.Windows.Rect r = el.Current.BoundingRectangle;
-                    if (!r.IsEmpty && r.Width > 4 && r.Height > 4)
-                        return new Rectangle((int)r.X, (int)r.Y, (int)r.Width, (int)r.Height);
-                }
+                Rectangle r;
+                if (Uia.FindById(tray, "StartButton", out r) && r.Width > 4 && r.Height > 4) return r;
             }
             catch { }
 
@@ -392,7 +437,7 @@ namespace ButterflyCursor
             List<Creature> all = Creature.All();
             Creature c = all.Find(delegate(Creature x) { return x.Id == Cfg.CreatureId; }) ?? all[0];
             string want = c.Id == "flag" ? "flag:" + Cfg.FlagCode : c.Id;
-            if (loadedId != want)
+            if (loadedId != want || source == null)
             {
                 Bitmap loaded;
                 try { loaded = c.Load(); }
@@ -484,11 +529,15 @@ namespace ButterflyCursor
                     }
                 }
 
-            if (glow.Count > 4000)
+            if (glow.Count > 300)
             {
                 foreach (Bitmap bmp in glow.Values) bmp.Dispose();
                 glow.Clear();
             }
+            // the frames are cut; the big strip is read again from the resource only when the size changes
+            source.Dispose();
+            source = null;
+            if (settings == null || settings.IsDisposed || !settings.Visible) TrimMemory();
         }
 
         /// <summary>Lowest visible row of a sprite, as a fraction of its height.</summary>
@@ -594,7 +643,11 @@ namespace ButterflyCursor
 
         void ShowSettings()
         {
-            if (settings == null || settings.IsDisposed) settings = new SettingsForm(appIcon);
+            if (settings == null || settings.IsDisposed)
+            {
+                settings = new SettingsForm(appIcon);
+                settings.FormClosed += delegate { BeginInvoke((MethodInvoker)TrimMemory); };
+            }
             settings.Show();
             if (settings.WindowState == FormWindowState.Minimized) settings.WindowState = FormWindowState.Normal;
             settings.Activate();
@@ -1568,6 +1621,9 @@ namespace ButterflyCursor
             box.Intersect(SystemInformation.VirtualScreen);
             if (paused || fullscreen || box.Width <= 0 || box.Height <= 0) box = new Rectangle(box.X, box.Y, 1, 1);
 
+            long need = (long)box.Width * box.Height, have = (long)surface.W * surface.H;
+            if (have > 4 * Math.Max(need, 512L * 512)) { if (++shrinkFrames > 300) { surface.Dispose(); shrinkFrames = 0; } }
+            else shrinkFrames = 0;
             surface.Ensure(box.Width, box.Height);
             Graphics g = surface.G;
             g.ResetTransform();
@@ -1590,6 +1646,21 @@ namespace ButterflyCursor
             var src = new Native.POINT();
             var blend = new Native.BLENDFUNCTION { Op = 0, Flags = 0, Alpha = 255, Format = 1 };
             Native.UpdateLayeredWindow(Handle, IntPtr.Zero, ref dst, ref size, surface.Dc, ref src, 0, ref blend, Native.ULW_ALPHA);
+        }
+
+        int shrinkFrames;
+
+        [DllImport("kernel32.dll")] static extern bool SetProcessWorkingSetSize(IntPtr process, IntPtr min, IntPtr max);
+        double lastTrim;
+
+        /// <summary>Gives memory that is no longer in use back to Windows (after loading, after the settings window).</summary>
+        void TrimMemory()
+        {
+            GC.Collect();
+            GC.WaitForPendingFinalizers();
+            GC.Collect();
+            try { SetProcessWorkingSetSize(Process.GetCurrentProcess().Handle, (IntPtr)(-1), (IntPtr)(-1)); } catch { }
+            lastTrim = clock.Elapsed.TotalSeconds;
         }
 
         static int FloorTo(int v, int grid) { return (int)Math.Floor(v / (double)grid) * grid; }
