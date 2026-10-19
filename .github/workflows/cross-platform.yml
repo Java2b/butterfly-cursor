@@ -1,11 +1,17 @@
 # Builds the macOS and Linux versions (cross/butterfly_cursor.py) on GitHub's machines.
-# When a release is published the results are attached to it; it can also be started by hand.
+# When a release is published the results are attached to it. Started by hand with a tag (v1.5),
+# it builds again and attaches the files to that release.
 name: macOS and Linux builds
 
 on:
   release:
     types: [published]
   workflow_dispatch:
+    inputs:
+      tag:
+        description: "Release tag to attach the builds to (empty: just build)"
+        required: false
+        default: ""
 
 permissions:
   contents: write
@@ -18,7 +24,7 @@ jobs:
         include:
           - os: macos-14            # Apple Silicon (M1 and newer)
             artifact: Butterfly-Cursor-macOS-AppleSilicon.zip
-          - os: macos-13            # Intel Macs
+          - os: macos-15-intel      # Intel Macs
             artifact: Butterfly-Cursor-macOS-Intel.zip
           - os: ubuntu-22.04
             artifact: Butterfly-Cursor-Linux-x86_64.tar.gz
@@ -65,7 +71,8 @@ jobs:
           path: ${{ matrix.artifact }}
 
       - name: Attach to the release
-        if: github.event_name == 'release'
+        if: github.event_name == 'release' || inputs.tag != ''
         uses: softprops/action-gh-release@v2
         with:
+          tag_name: ${{ inputs.tag || github.ref_name }}
           files: ${{ matrix.artifact }}
