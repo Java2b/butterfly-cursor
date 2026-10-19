@@ -1,10 +1,10 @@
 # Builds the macOS and Linux versions (cross/butterfly_cursor.py) on GitHub's machines.
-# On a version tag (v1.5, …) the results are attached to that release; it can also be started by hand.
+# When a release is published the results are attached to it; it can also be started by hand.
 name: macOS and Linux builds
 
 on:
-  push:
-    tags: ["v*"]
+  release:
+    types: [published]
   workflow_dispatch:
 
 permissions:
@@ -65,7 +65,7 @@ jobs:
           path: ${{ matrix.artifact }}
 
       - name: Attach to the release
-        if: startsWith(github.ref, 'refs/tags/')
+        if: github.event_name == 'release'
         uses: softprops/action-gh-release@v2
         with:
           files: ${{ matrix.artifact }}

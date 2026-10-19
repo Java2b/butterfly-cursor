@@ -17,7 +17,7 @@ from PySide6.QtGui import (QAction, QActionGroup, QColor, QCursor, QGuiApplicati
                            QPen, QPixmap, QPolygonF, QRadialGradient, QImage)
 from PySide6.QtWidgets import QApplication, QMenu, QSystemTrayIcon, QWidget
 
-VERSION = "1.5-preview"
+VERSION = "1.5 preview"
 
 
 def asset_dir():
