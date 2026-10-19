@@ -1,0 +1,71 @@
+# Builds the macOS and Linux versions (cross/butterfly_cursor.py) on GitHub's machines.
+# On a version tag (v1.5, …) the results are attached to that release; it can also be started by hand.
+name: macOS and Linux builds
+
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: macos-14            # Apple Silicon (M1 and newer)
+            artifact: Butterfly-Cursor-macOS-AppleSilicon.zip
+          - os: macos-13            # Intel Macs
+            artifact: Butterfly-Cursor-macOS-Intel.zip
+          - os: ubuntu-22.04
+            artifact: Butterfly-Cursor-Linux-x86_64.tar.gz
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install
+        run: python -m pip install --upgrade pip pyside6-essentials pyinstaller
+
+      - name: Linux libraries for Qt
+        if: runner.os == 'Linux'
+        run: sudo apt-get update && sudo apt-get install -y libxcb-cursor0 libxkbcommon-x11-0 libegl1
+
+      - name: Build
+        run: python cross/build.py
+
+      - name: Smoke test (starts and keeps running for 5 seconds, no screen needed)
+        shell: bash
+        env:
+          QT_QPA_PLATFORM: offscreen
+        run: |
+          if [ "$RUNNER_OS" = "macOS" ]; then APP="cross/dist/Butterfly Cursor.app/Contents/MacOS/Butterfly Cursor"; else APP=cross/dist/butterfly-cursor; fi
+          "$APP" & PID=$!
+          sleep 5
+          kill -0 $PID && echo "still running: OK"
+          kill $PID || true
+
+      - name: Pack (macOS)
+        if: runner.os == 'macOS'
+        run: cd cross/dist && ditto -c -k --keepParent "Butterfly Cursor.app" "../../${{ matrix.artifact }}"
+
+      - name: Pack (Linux)
+        if: runner.os == 'Linux'
+        run: tar -czf "${{ matrix.artifact }}" -C cross/dist butterfly-cursor
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.artifact }}
+          path: ${{ matrix.artifact }}
+
+      - name: Attach to the release
+        if: startsWith(github.ref, 'refs/tags/')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: ${{ matrix.artifact }}

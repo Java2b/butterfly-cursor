@@ -84,7 +84,12 @@
 
 <details><summary><b>А для Linux и macOS?</b></summary>
 
-Пока только Windows: программа использует особые окна Windows и знает, где кнопка «Пуск». Версии для других систем — в планах.
+Есть **пробная версия** — на странице [Releases](../../releases/latest) файлы `Butterfly-Cursor-macOS-…zip` и `Butterfly-Cursor-Linux-x86_64.tar.gz`. Те же существа, пыльца и анимации; настройки — в значке в строке меню / трее; отдыхает у Dock или нижней панели.
+
+- **macOS:** программа не подписана — при первом запуске правый клик → «Открыть».
+- **Linux:** работает на X11; на Wayland запускается через XWayland (Wayland не сообщает программам, где мышь).
+
+Исходники — в папке [`cross`](cross).
 </details>
 
 ### 🛠️ Сборка из исходников
@@ -132,7 +137,7 @@ One 3.5 MB file, no admin rights, free and open source.
 - **Games?** It hides in full-screen games and video; clicks always pass through.
 - **Uninstall?** Settings → Apps → Butterfly Cursor → Uninstall. Everything is removed.
 - **Data?** None collected. The only network request asks GitHub for the latest version number.
-- **Linux / macOS?** Windows only for now; other systems are planned.
+- **Linux / macOS?** A **preview** is on the [Releases](../../releases/latest) page (`…macOS…zip`, `…Linux-x86_64.tar.gz`): the same creatures, dust and animations, settings in the menu-bar / tray icon. macOS: not signed — right-click → Open the first time. Linux: X11, or XWayland on Wayland. Source: [`cross`](cross).
 
 ### 🛠️ Building
 

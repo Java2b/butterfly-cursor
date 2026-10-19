@@ -16,3 +16,10 @@ dist/
 
 # design mock-ups
 docs/mockups/
+
+# macOS / Linux build outputs
+cross/assets/
+cross/dist/
+cross/build/
+*.spec
+__pycache__/
