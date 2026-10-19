@@ -1249,7 +1249,9 @@ namespace ButterflyCursor
             bool idle = dozing || (Cfg.GoHome && now - lastMove > Cfg.IdleSec);
             // the demo and the easter eggs keep it busy even when the mouse rests
             if (!dozing && (Demo || dizzyT > 0 || scaredT > 0)) idle = false;
-            RefreshStartRects(now, idle && !wasIdle ? 3 : 120);
+            // the centred Windows 11 taskbar moves Start whenever programs open or close: look again every few
+            // seconds while resting there (a quick lookup on a helper thread), rarely while following the mouse
+            RefreshStartRects(now, idle ? (wasIdle ? 4 : 0.5) : 60);
             wasIdle = idle;
 
             // speed setting 1..10; crawlers are slower than fliers, the snail is much slower
