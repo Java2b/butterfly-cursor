@@ -1,37 +1,93 @@
-# Butterfly Cursor 🦋
+<div align="center">
 
-![Butterfly Cursor](docs/preview.png)
+![Butterfly Cursor](docs/hero.png)
 
-**🇷🇺 Русский** · [🇬🇧 English](#-english) · [🇺🇿 Oʻzbekcha](#-oʻzbekcha)
+[![Release](https://img.shields.io/github/v/release/Java2b/butterfly-cursor?label=%D0%B2%D0%B5%D1%80%D1%81%D0%B8%D1%8F%20%2F%20version&color=4c8dff)](../../releases/latest)
+[![Downloads](https://img.shields.io/github/downloads/Java2b/butterfly-cursor/total?color=7a5cff)](../../releases)
+![Windows 10 | 11](https://img.shields.io/badge/Windows-10%20%7C%2011-0078d4?logo=windows)
+[![License: MIT](https://img.shields.io/badge/license-MIT-2ea44f)](LICENSE)
+
+### [⬇️ Скачать Butterfly.exe / Download](../../releases/latest/download/Butterfly.exe)
+
+**🇷🇺 [Русский](#-русский)** · **🇬🇧 [English](#-english)** · **🇺🇿 [Oʻzbekcha](#-oʻzbekcha)**
+
+</div>
 
 ---
 
 ## 🇷🇺 Русский
 
-**Butterfly Cursor — программа просто для красоты.** Она не делает ничего полезного: по экрану за указателем мыши летает светящаяся бабочка и оставляет за собой волшебную пыльцу, как у феи. Когда мышь не двигается, бабочка улетает к кнопке «Пуск» и отдыхает там.
+**Butterfly Cursor — программа просто для красоты.** За указателем мыши летает светящаяся бабочка (или змея, ниндзя, вертолёт — выбирайте) и оставляет за собой волшебную пыльцу, как у феи. Когда мышь не двигается, она улетает к кнопке «Пуск» и отдыхает там: ниндзя медитирует, панда ест бамбук, змея сворачивается кольцом.
 
-### Что умеет
+Один файл, 3,5 МБ, без прав администратора. Бесплатно и с открытым кодом.
 
-- 🦋 Бабочка, жук, паук, улитка, **живая змея** (тело повторяет путь головы, она кружится, проползает по себе и сворачивается кольцом), лиса, слонёнок, **панда-мастер** (в покое ест бамбук), **ниндзя с мечом** (медитирует на «Пуске»), лучадор «Бабочка», **пиксельный коммандос** (прыгает кувырком), байкер, спасательный и **ударный вертолёты**, **рука-помощница** на пальцах, **облака с дождём и снегом, солнце и луна**, а также **флаг любой страны** (271 флаг).
-- 🎨 Окно выбора существа с живым превью и категориями, светлая и тёмная тема.
-- 🔄 Сама сообщает о новой версии и обновляется по кнопке «Да» (можно отключить).
-- 🎬 **Демонстрация для видео**, искры и сюрикены по клику, снег/листья/сакура/тыквы/конфетти по сезону, танец под музыку, ночное свечение и пара секретов.
-- ✨ Светящаяся пыльца: свои цвета (любой RGB), количество, размер, яркость, сияние вокруг существа.
-- 🖼️ Свои картинки: JPG/PNG — фон убирается автоматически. Полоска кадров (PNG шириной в несколько квадратов) превращается в анимацию.
-- 🎮 Не мешает: клики проходят сквозь неё, в играх и полноэкранном видео она прячется, а в рабочих программах (Photoshop, Zoom, Word…) — засыпает маленькой у «Пуска» или исчезает.
-- 🖥️ Несколько мониторов, Windows 10 и 11 (кнопка «Пуск» по центру или слева).
-- 🌐 Русский, английский и узбекский языки, встроенная инструкция.
-- 📦 Установщик без прав администратора: выбор папки, ярлыки, удаление через «Параметры → Приложения».
+### ✨ Что умеет
 
-### Установка
+| | |
+|---|---|
+| 🦋 **19 существ** | бабочка, жук, паук, улитка, живая змея, лиса, слонёнок, панда-мастер, ниндзя, лучадор, пиксельный коммандос, байкер, спасательный и ударный вертолёты, рука-помощница, облака, солнце, луна и **флаг любой страны** (271 флаг) |
+| 🐍 **Живые движения** | у каждого своя скорость и плавный разгон; змея ползёт волной и проползает по себе, вертолёт наклоняется в полёте, коммандос прыгает кувырком |
+| 🌟 **Пыльца** | любые цвета (RGB), количество, размер, яркость, сияние вокруг существа, радужный режим |
+| 🖼️ **Свои картинки** | любой JPG/PNG — фон убирается автоматически; полоска кадров превращается в анимацию |
+| 🎮 **Не мешает** | клики проходят насквозь; в играх и полноэкранном видео прячется; в рабочих программах (Photoshop, Zoom, Word…) засыпает маленькой у «Пуска» |
+| 🎉 **Развлечения** | снег, листья, сакура и тыквы по сезону, искры по клику, танец под музыку, ночное свечение, режим для видео и пара секретов |
+| 🚀 **Автозагрузка** | запускается вместе с Windows (галочка в настройках, включается при установке) |
+| 🔄 **Обновления** | сама сообщает о новой версии: «Да» — обновляется сразу, «Нет» — спросит через 12 часов |
+| 🎨 **Удобные настройки** | окно выбора с живым превью и категориями, светлая и тёмная тема, русский, английский и узбекский языки |
+| 🖥️ **Где работает** | Windows 10 и 11, несколько мониторов, «Пуск» по центру или слева |
+| 🪶 **Лёгкая** | около 35 МБ памяти и несколько процентов одного ядра процессора |
 
-1. Скачайте `Butterfly.exe` со страницы [Releases](../../releases).
+### 🖼️ Существа
+
+![Существа](docs/screenshots/creatures.png)
+
+### ⚙️ Настройки
+
+| Тёмная тема | Светлая тема |
+|:---:|:---:|
+| ![Тёмная тема](docs/screenshots/settings-dark.png) | ![Светлая тема](docs/screenshots/settings-light.png) |
+
+Настройки открываются щелчком по значку бабочки возле часов или правым кликом по рабочему столу → «Бабочка — настройки».
+
+### 📥 Установка
+
+1. Скачайте [`Butterfly.exe`](../../releases/latest/download/Butterfly.exe).
 2. Запустите и нажмите «Установить» (или «Запустить без установки»).
-3. Windows может показать «Система Windows защитила ваш компьютер» — программа не подписана. Нажмите «Подробнее» → «Выполнить в любом случае».
+3. Windows может показать «Система Windows защитила ваш компьютер» — программа не подписана платным сертификатом. Нажмите «Подробнее» → «Выполнить в любом случае».
 
-Настройки: значок бабочки возле часов или правый клик по рабочему столу → «Бабочка — настройки».
+### ❓ Частые вопросы
 
-### Сборка из исходников
+<details><summary><b>Есть ли автозагрузка?</b></summary>
+
+Да. При установке программа добавляется в автозагрузку. Отключить или включить: настройки → «Запускать вместе с Windows». Запись хранится в обычном месте — `HKCU\Software\Microsoft\Windows\CurrentVersion\Run`.
+</details>
+
+<details><summary><b>Не будет мешать в играх?</b></summary>
+
+Нет. В полноэкранных играх и видео существо прячется само, а клики всегда проходят сквозь него. Для рабочих программ есть список: там существо засыпает маленьким у «Пуска» или исчезает совсем.
+</details>
+
+<details><summary><b>Как удалить?</b></summary>
+
+«Параметры → Приложения → Butterfly Cursor → Удалить». Программа убирает за собой всё: файлы, ярлыки, автозагрузку и пункт в меню рабочего стола.
+</details>
+
+<details><summary><b>Как обновлять?</b></summary>
+
+Никак — программа сама раз в 12 часов проверяет, нет ли новой версии, и спрашивает «Обновиться?». Проверить вручную: значок у часов → «Проверить обновления». Отключить: настройки → «Сообщать о новых версиях».
+</details>
+
+<details><summary><b>Программа собирает какие-нибудь данные?</b></summary>
+
+Нет. Единственное обращение в интернет — к GitHub, чтобы узнать номер последней версии. Никаких аккаунтов, рекламы и телеметрии. Код открыт — можно проверить.
+</details>
+
+<details><summary><b>А для Linux и macOS?</b></summary>
+
+Пока только Windows: программа использует особые окна Windows и знает, где кнопка «Пуск». Версии для других систем — в планах.
+</details>
+
+### 🛠️ Сборка из исходников
 
 Нужен только Windows — компилятор C# из .NET Framework 4 уже есть в системе:
 
@@ -39,72 +95,72 @@
 build.bat
 ```
 
-Картинки существ рисуются скриптами Python из папки `tools` (нужны Pillow, NumPy, SciPy).
+Картинки существ рисуются скриптами Python из папки `tools` (Pillow, NumPy, SciPy).
 
 ---
 
 ## 🇬🇧 English
 
-**Butterfly Cursor is a program just for beauty.** It does nothing useful: a glowing butterfly follows your mouse pointer around the screen and leaves a trail of fairy dust. When the mouse is still, it flies to the Start button and rests there.
+**Butterfly Cursor is a program just for beauty.** A glowing butterfly (or a snake, a ninja, a helicopter — your choice) follows your mouse pointer and leaves a trail of fairy dust. When the mouse is still, it flies to the Start button and rests there: the ninja meditates, the panda eats bamboo, the snake coils up.
 
-### Features
+One 3.5 MB file, no admin rights, free and open source.
 
-- 🦋 A butterfly, a beetle, a spider, a snail, a **live snake** (the body follows the head's path; it loops, crawls over itself and coils up), a fox, a baby elephant, a **panda master** (eats bamboo when idle), a **ninja with a sword** (meditates on the Start button), the luchador “Mariposa”, a **pixel commando** (somersaults), a biker, a rescue and an **attack helicopter**, a **helper hand** walking on its fingers, **rain and snow clouds, the sun and the moon**, and **any country's flag** (271 flags).
-- 🎨 A creature picker with a live preview and categories, light and dark theme.
-- 🔄 Tells you about a new version and updates itself when you press “Yes” (can be switched off).
-- 🎬 **Demo mode for videos**, sparks and shurikens on click, seasonal snow / leaves / sakura / pumpkins / confetti, dancing to music, night glow and a couple of secrets.
-- ✨ Glowing dust: your own colours (any RGB), amount, size, brightness, a glow around the creature.
-- 🖼️ Your own pictures: JPG/PNG with the background removed automatically. A strip of square frames becomes an animation.
-- 🎮 Never in the way: clicks pass through it, it hides during games and full-screen video, and in work programs (Photoshop, Zoom, Word…) it dozes, small, by the Start button or disappears.
-- 🖥️ Multiple monitors, Windows 10 and 11 (Start button centred or on the left).
-- 🌐 Russian, English and Uzbek, with built-in help.
-- 📦 Installer without admin rights: choose a folder, shortcuts, uninstall from Settings → Apps.
+### ✨ Features
 
-### Install
+- 🦋 **19 creatures** — butterfly, beetle, spider, snail, a live snake, fox, baby elephant, panda master, ninja, luchador, pixel commando, biker, rescue and attack helicopters, helper hand, clouds, sun, moon and **any country's flag** (271 flags).
+- 🐍 **Lifelike motion** — each has its own speed and smooth acceleration; the snake slithers and crawls over itself, helicopters dip their nose, the commando somersaults.
+- 🌟 **Glowing dust** — any RGB colours, amount, size, brightness, a glow around the creature, rainbow mode.
+- 🖼️ **Your own pictures** — any JPG/PNG with the background removed automatically; a strip of frames becomes an animation.
+- 🎮 **Never in the way** — clicks pass through; hides in games and full-screen video; dozes small by Start in work apps (Photoshop, Zoom, Word…).
+- 🎉 **Fun** — seasonal snow, leaves, sakura and pumpkins, sparks on click, dancing to music, night glow, a demo mode for videos and a couple of secrets.
+- 🚀 **Starts with Windows** — a checkbox in the settings, switched on by the installer.
+- 🔄 **Updates itself** — “Yes” updates right away, “No” asks again in 12 hours.
+- 🎨 **Settings** — a creature picker with a live preview, light and dark theme, Russian, English and Uzbek.
+- 🖥️ Windows 10 and 11, multiple monitors · 🪶 about 35 MB of memory.
 
-1. Download `Butterfly.exe` from [Releases](../../releases).
+![Creatures](docs/screenshots/creatures.png)
+
+### 📥 Install
+
+1. Download [`Butterfly.exe`](../../releases/latest/download/Butterfly.exe).
 2. Run it and press “Install” (or “Run without installing”).
-3. Windows may say “Windows protected your PC” because the program is not signed: click “More info” → “Run anyway”.
+3. If Windows says “Windows protected your PC” (the program is not signed): “More info” → “Run anyway”.
 
-Settings: the butterfly icon near the clock, or right-click the desktop → “Butterfly — settings”.
+### ❓ FAQ
 
-### Building
+- **Autostart?** Yes — set by the installer; toggle it in the settings (“Start with Windows”). It is the usual `HKCU\…\CurrentVersion\Run` entry.
+- **Games?** It hides in full-screen games and video; clicks always pass through.
+- **Uninstall?** Settings → Apps → Butterfly Cursor → Uninstall. Everything is removed.
+- **Data?** None collected. The only network request asks GitHub for the latest version number.
+- **Linux / macOS?** Windows only for now; other systems are planned.
 
-Only Windows is needed — the C# compiler of .NET Framework 4 is already part of it:
+### 🛠️ Building
 
 ```bat
 build.bat
 ```
 
-The creature pictures are drawn by the Python scripts in `tools` (Pillow, NumPy, SciPy).
+Only Windows is needed (the C# compiler of .NET Framework 4). Creature pictures are drawn by the Python scripts in `tools`.
 
 ---
 
 ## 🇺🇿 Oʻzbekcha
 
-**Butterfly Cursor — shunchaki goʻzallik uchun dastur.** U hech qanday foydali ish qilmaydi: ekranda sichqoncha koʻrsatkichi ortidan yaltiroq kapalak uchib yuradi va ortidan sehrli chang qoldiradi. Sichqoncha qimirlamasa, kapalak «Pusk» tugmasi yoniga uchib borib, dam oladi.
+**Butterfly Cursor — shunchaki goʻzallik uchun dastur.** Sichqoncha koʻrsatkichi ortidan yaltiroq kapalak (yoki ilon, ninja, vertolyot — tanlang) uchib yuradi va sehrli chang qoldiradi. Sichqoncha qimirlamasa, «Pusk» tugmasi yoniga borib dam oladi.
 
-### Imkoniyatlari
+- 🦋 **19 ta jonzot** va **istalgan davlat bayrogʻi** (271 ta).
+- 🐍 Har birining oʻz tezligi va ravon tezlanishi; ilon toʻlqinsimon sudraladi, vertolyot uchayotganda egiladi.
+- 🌟 Yaltiroq chang: istalgan RGB rang, soni, oʻlchami, yorqinligi.
+- 🖼️ Oʻz rasmlaringiz: JPG/PNG — fon avtomatik olib tashlanadi.
+- 🎮 Xalaqit bermaydi: oʻyin va toʻliq ekranli videoda yashirinadi.
+- 🚀 **Windows bilan birga ishga tushadi** (sozlamalarda belgicha).
+- 🔄 Yangi versiya haqida oʻzi aytadi va «Ha» bilan yangilanadi.
+- 🎨 Jonli koʻrinishli tanlash oynasi, yorugʻ va qorongʻi mavzu, rus, ingliz va oʻzbek tillari.
 
-- 🦋 Kapalak, qoʻngʻiz, oʻrgimchak, shilliqqurt, **jonli ilon** (tanasi boshining yoʻlidan yuradi, aylanadi, oʻz ustidan oʻtadi va halqa boʻlib oʻraladi), tulki, fil bolasi, **panda usta** (dam olganda bambuk yeydi), **qilichli ninja** («Pusk» ustida meditatsiya qiladi), «Kapalak» luchadori, **piksel komandos** (umbaloq oshib sakraydi), bayker, qutqaruv va **hujumchi vertolyotlar**, barmoqlarida yuradigan **yordamchi qoʻl**, **yomgʻirli va qorli bulutlar, quyosh va oy**, hamda **istalgan davlat bayrogʻi** (271 ta bayroq).
-- 🎨 Jonli koʻrinishli va toifali jonzot tanlash oynasi, yorugʻ va qorongʻi mavzu.
-- 🔄 Yangi versiya chiqqanini oʻzi aytadi va «Ha» tugmasi bilan yangilanadi (oʻchirib qoʻyish mumkin).
-- 🎬 **Video uchun namoyish**, bosganda uchqun va shurikenlar, mavsumiy qor / barglar / sakura / qovoqlar / konfetti, musiqaga raqs, tungi yogʻdu va bir nechta sir.
-- ✨ Yaltiroq chang: oʻz ranglaringiz (istalgan RGB), soni, oʻlchami, yorqinligi, jonzot atrofidagi yogʻdu.
-- 🖼️ Oʻz rasmlaringiz: JPG/PNG — fon avtomatik olib tashlanadi. Kvadrat kadrlardan iborat tasma animatsiyaga aylanadi.
-- 🎮 Xalaqit bermaydi: bosishlar undan oʻtib ketadi, oʻyin va toʻliq ekranli videoda yashirinadi, ish dasturlarida (Photoshop, Zoom, Word…) esa «Pusk» yonida kichrayib uxlaydi yoki gʻoyib boʻladi.
-- 🖥️ Bir nechta monitor, Windows 10 va 11.
-- 🌐 Rus, ingliz va oʻzbek tillari, ichki qoʻllanma.
-- 📦 Administrator huquqisiz oʻrnatuvchi: papka tanlash, yorliqlar, «Sozlamalar → Ilovalar» orqali oʻchirish.
-
-### Oʻrnatish
-
-1. `Butterfly.exe` faylini [Releases](../../releases) sahifasidan yuklab oling.
-2. Ishga tushiring va «Oʻrnatish» tugmasini bosing (yoki «Oʻrnatmasdan ishga tushirish»).
-3. Windows «Windows kompyuteringizni himoya qildi» deb koʻrsatishi mumkin — dastur imzolanmagan. «Batafsil» → «Baribir ishga tushirish» ni bosing.
+**Oʻrnatish:** [`Butterfly.exe`](../../releases/latest/download/Butterfly.exe) ni yuklab oling, ishga tushiring va «Oʻrnatish» ni bosing. Windows ogohlantirsa: «Batafsil» → «Baribir ishga tushirish».
 
 ---
 
 ## Licence / Лицензия / Litsenziya
 
-[MIT](LICENSE). Country flags: [flag-icons](https://github.com/lipis/flag-icons) by Panayiotis Lipiridis, MIT — see [THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md).
+[MIT](LICENSE) · Author: **JB**. Country flags: [flag-icons](https://github.com/lipis/flag-icons) (MIT); pixel fox and elephant base: CC0 sprites by ScratchIO and zonked — see [THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md).
