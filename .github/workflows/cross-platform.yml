@@ -22,7 +22,7 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - os: macos-14            # Apple Silicon (M1 and newer)
+          - os: macos-15            # Apple Silicon (M1 and newer)
             artifact: Butterfly-Cursor-macOS-AppleSilicon.zip
           - os: macos-15-intel      # Intel Macs
             artifact: Butterfly-Cursor-macOS-Intel.zip
