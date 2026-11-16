@@ -18,7 +18,7 @@ namespace ButterflyCursor
 
         public SettingsForm(Icon icon)
         {
-            Text = L.T("Бабочка — настройки");
+            Text = L.T("Бабочка — настройки") + "  ·  v" + Installer.Version;
             Icon = icon;
             Font = new Font("Segoe UI", 9f);
             FormBorderStyle = FormBorderStyle.FixedDialog;
@@ -117,10 +117,15 @@ namespace ButterflyCursor
             Row(L.T("Через сколько секунд покоя"), idle);
             idle.ValueChanged += delegate { if (!loading) { Cfg.IdleSec = (int)idle.Value; Cfg.Apply(); } };
             refreshers.Add(delegate { idle.Value = Cfg.IdleSec; idle.Enabled = Cfg.GoHome; });
-            home.CheckedChanged += delegate { idle.Enabled = home.Checked; };
+            var small = Check(L.T("Отдыхать маленьким рядом с «Пуском», не заслоняя окна"),
+                delegate { return Cfg.RestSmall; }, delegate(bool v) { Cfg.RestSmall = v; });
+            refreshers.Add(delegate { small.Enabled = Cfg.GoHome; });
+            home.CheckedChanged += delegate { idle.Enabled = home.Checked; small.Enabled = home.Checked; };
 
             Check(L.T("Прятаться, когда игра или видео открыты на весь экран"),
                 delegate { return Cfg.HideFullscreen; }, delegate(bool v) { Cfg.HideFullscreen = v; });
+            Check(L.T("Не заслонять поле, в котором печатаю"), delegate { return Cfg.AvoidInput; }, delegate(bool v) { Cfg.AvoidInput = v; });
+            Check(L.T("Не попадать на скриншоты и запись экрана"), delegate { return Cfg.HideCapture; }, delegate(bool v) { Cfg.HideCapture = v; });
 
             var apps = new Button { Text = L.T("Программы, в которых прятаться…"), AutoSize = true, FlatStyle = FlatStyle.System, Margin = new Padding(3, 4, 3, 2) };
             apps.Click += delegate { using (var dlg = new AppsForm(Icon)) dlg.ShowDialog(this); };

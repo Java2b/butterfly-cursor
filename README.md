@@ -29,7 +29,8 @@
 | 🐍 **Живые движения** | у каждого своя скорость и плавный разгон; змея ползёт волной и проползает по себе, вертолёт наклоняется в полёте, коммандос прыгает кувырком |
 | 🌟 **Пыльца** | любые цвета (RGB), количество, размер, яркость, сияние вокруг существа, радужный режим |
 | 🖼️ **Свои картинки** | любой JPG/PNG — фон убирается автоматически; полоска кадров превращается в анимацию |
-| 🎮 **Не мешает** | клики проходят насквозь; в играх и полноэкранном видео прячется; в рабочих программах (Photoshop, Zoom, Word…) засыпает маленькой у «Пуска» |
+| 🎮 **Не мешает** | клики проходят насквозь; не заслоняет поле, в котором вы печатаете; отдыхает маленькой на панели задач рядом с «Пуском»; в играх и полноэкранном видео прячется; в рабочих программах (Photoshop, Zoom, Word…) засыпает |
+| 📸 **Невидима на скриншотах** | не попадает на снимки экрана (PrtSc, Win+Shift+S, «Ножницы»), в запись и демонстрацию экрана — на экране её видите только вы (выключается в настройках) |
 | 🎉 **Развлечения** | снег, листья, сакура и тыквы по сезону, искры по клику, танец под музыку, ночное свечение, режим для видео и пара секретов |
 | 🚀 **Автозагрузка** | запускается вместе с Windows (галочка в настройках, включается при установке) |
 | 🔄 **Обновления** | сама сообщает о новой версии: «Да» — обновляется сразу, «Нет» — спросит через 12 часов |
@@ -116,7 +117,8 @@ One 3.5 MB file, no admin rights, free and open source.
 - 🐍 **Lifelike motion** — each has its own speed and smooth acceleration; the snake slithers and crawls over itself, helicopters dip their nose, the commando somersaults.
 - 🌟 **Glowing dust** — any RGB colours, amount, size, brightness, a glow around the creature, rainbow mode.
 - 🖼️ **Your own pictures** — any JPG/PNG with the background removed automatically; a strip of frames becomes an animation.
-- 🎮 **Never in the way** — clicks pass through; hides in games and full-screen video; dozes small by Start in work apps (Photoshop, Zoom, Word…).
+- 🎮 **Never in the way** — clicks pass through; keeps clear of the text field you type in; rests small on the taskbar beside Start; hides in games and full-screen video; dozes in work apps (Photoshop, Zoom, Word…).
+- 📸 **Invisible in screenshots** — stays out of screenshots (PrtSc, Win+Shift+S, Snipping Tool), screen recording and screen sharing; only you see it (can be switched off).
 - 🎉 **Fun** — seasonal snow, leaves, sakura and pumpkins, sparks on click, dancing to music, night glow, a demo mode for videos and a couple of secrets.
 - 🚀 **Starts with Windows** — a checkbox in the settings, switched on by the installer.
 - 🔄 **Updates itself** — “Yes” updates right away, “No” asks again in 12 hours.
@@ -157,7 +159,8 @@ Only Windows is needed (the C# compiler of .NET Framework 4). Creature pictures 
 - 🐍 Har birining oʻz tezligi va ravon tezlanishi; ilon toʻlqinsimon sudraladi, vertolyot uchayotganda egiladi.
 - 🌟 Yaltiroq chang: istalgan RGB rang, soni, oʻlchami, yorqinligi.
 - 🖼️ Oʻz rasmlaringiz: JPG/PNG — fon avtomatik olib tashlanadi.
-- 🎮 Xalaqit bermaydi: oʻyin va toʻliq ekranli videoda yashirinadi.
+- 🎮 Xalaqit bermaydi: yozayotgan maydoningizni toʻsmaydi, oʻyin va toʻliq ekranli videoda yashirinadi.
+- 📸 Skrinshot va ekran yozuviga tushmaydi.
 - 🚀 **Windows bilan birga ishga tushadi** (sozlamalarda belgicha).
 - 🔄 Yangi versiya haqida oʻzi aytadi va «Ha» bilan yangilanadi.
 - 🎨 Jonli koʻrinishli tanlash oynasi, yorugʻ va qorongʻi mavzu, rus, ingliz va oʻzbek tillari.

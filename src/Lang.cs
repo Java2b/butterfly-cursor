@@ -109,6 +109,8 @@ namespace ButterflyCursor
             { "Открыть страницу", new[] { "Open the page", "Sahifani ochish" } },
             { "У вас последняя версия.", new[] { "You have the latest version.", "Sizda eng soʻnggi versiya." } },
             { "Проверить обновления", new[] { "Check for updates", "Yangilanishlarni tekshirish" } },
+            { "Не заслонять поле, в котором печатаю", new[] { "Keep clear of the field I am typing in", "Yozayotgan maydonimni toʻsmaslik" } },
+            { "Не попадать на скриншоты и запись экрана", new[] { "Stay out of screenshots and screen recordings", "Skrinshot va ekran yozuviga tushmaslik" } },
             { "Сообщать о новых версиях", new[] { "Tell me about new versions", "Yangi versiyalar haqida xabar berish" } },
             { "Змея", new[] { "Snake", "Ilon" } },
             { "Питон, вид сверху: ползёт волной, в покое сворачивается кольцом и показывает язык", new[] { "A python seen from above: slithers in waves, coils up and flicks its tongue when idle", "Piton, yuqoridan koʻrinish: toʻlqinsimon sudraladi, dam olganda halqa boʻlib oʻraladi va tilini chiqaradi" } },
@@ -154,6 +156,7 @@ namespace ButterflyCursor
             // behaviour
             { "Поведение", new[] { "Behaviour", "Xatti-harakat" } },
             { "Скорость", new[] { "Speed", "Tezlik" } },
+            { "Отдыхать маленьким рядом с «Пуском», не заслоняя окна", new[] { "Rest small beside Start, clear of the windows", "«Pusk» yonida kichkina boʻlib dam olish, oynalarni toʻsmasdan" } },
             { "Возвращаться к кнопке «Пуск», когда мышь не двигается", new[] { "Return to the Start button when the mouse is still", "Sichqoncha qimirlamasa, «Pusk» tugmasiga qaytish" } },
             { "Через сколько секунд покоя", new[] { "After how many idle seconds", "Necha soniya kutgandan keyin" } },
             { "Прятаться, когда игра или видео открыты на весь экран", new[] { "Hide while a game or video is full screen", "Oʻyin yoki video toʻliq ekranda boʻlsa, yashirinish" } },

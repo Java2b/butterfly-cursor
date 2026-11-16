@@ -96,6 +96,12 @@ namespace ButterflyCursor
         [DllImport("user32.dll", CharSet = CharSet.Unicode)] public static extern IntPtr FindWindowEx(IntPtr parent, IntPtr after, string cls, string title);
         [DllImport("user32.dll")] public static extern bool SetWindowPos(IntPtr hwnd, IntPtr after, int x, int y, int cx, int cy, int flags);
         [DllImport("user32.dll")] public static extern bool DestroyIcon(IntPtr icon);
+        [DllImport("user32.dll")] public static extern bool SetWindowDisplayAffinity(IntPtr hwnd, int affinity);
+        public const int WDA_NONE = 0, WDA_EXCLUDEFROMCAPTURE = 0x11;
+        [StructLayout(LayoutKind.Sequential)]
+        public struct GUITHREADINFO { public int cbSize, flags; public IntPtr active, focus, capture, menuOwner, moveSize, hwndCaret; public RECT caret; }
+        [DllImport("user32.dll")] public static extern bool GetGUIThreadInfo(uint thread, ref GUITHREADINFO info);
+        [DllImport("user32.dll")] public static extern int MapWindowPoints(IntPtr from, IntPtr to, ref RECT r, int count);
         [DllImport("user32.dll")]
         public static extern bool UpdateLayeredWindow(IntPtr hwnd, IntPtr hdcDst, ref POINT dst, ref SIZE size,
             IntPtr hdcSrc, ref POINT src, int key, ref BLENDFUNCTION blend, int flags);
@@ -174,7 +180,9 @@ namespace ButterflyCursor
         {
             void CompareElements(); void CompareRuntimeIds(); void GetRootElement();
             [return: MarshalAs(UnmanagedType.Interface)] IUIAutomationElement ElementFromHandle(IntPtr hwnd);
-            void ElementFromPoint(); void GetFocusedElement(); void GetRootElementBuildCache(); void ElementFromHandleBuildCache();
+            void ElementFromPoint();
+            [return: MarshalAs(UnmanagedType.Interface)] IUIAutomationElement GetFocusedElement();
+            void GetRootElementBuildCache(); void ElementFromHandleBuildCache();
             void ElementFromPointBuildCache(); void GetFocusedElementBuildCache(); void CreateTreeWalker();
             void ControlViewWalker(); void ContentViewWalker(); void RawViewWalker(); void RawViewCondition();
             void ControlViewCondition(); void ContentViewCondition(); void CreateCacheRequest();
@@ -195,15 +203,39 @@ namespace ButterflyCursor
         class CUIAutomation { }
 
         const int AutomationIdProperty = 30011, BoundingRectangleProperty = 30001, TreeScopeDescendants = 4;
+        const int ControlTypeProperty = 30003, EditControl = 50004, DocumentControl = 50030;
         static IUIAutomation uia;
+        static readonly object uiaLock = new object();
+
+        static IUIAutomation Get()
+        {
+            lock (uiaLock) { if (uia == null) uia = (IUIAutomation)new CUIAutomation(); return uia; }
+        }
+
+        /// <summary>The text field that has the keyboard focus (an edit box or a document), if any.</summary>
+        public static bool FocusedTextField(out Rectangle rect)
+        {
+            rect = Rectangle.Empty;
+            IUIAutomationElement el = Get().GetFocusedElement();
+            if (el == null) return false;
+            try
+            {
+                object type = el.GetCurrentPropertyValue(ControlTypeProperty);
+                if (!(type is int) || ((int)type != EditControl && (int)type != DocumentControl)) return false;
+                double[] r = el.GetCurrentPropertyValue(BoundingRectangleProperty) as double[];
+                if (r == null || r.Length < 4 || r[2] < 1 || r[3] < 1) return false;
+                rect = new Rectangle((int)r[0], (int)r[1], (int)r[2], (int)r[3]);
+                return true;
+            }
+            finally { Marshal.ReleaseComObject(el); }
+        }
 
         public static bool FindById(IntPtr hwnd, string id, out Rectangle rect)
         {
             rect = Rectangle.Empty;
-            if (uia == null) uia = (IUIAutomation)new CUIAutomation();
-            IUIAutomationElement root = uia.ElementFromHandle(hwnd);
+            IUIAutomationElement root = Get().ElementFromHandle(hwnd);
             if (root == null) return false;
-            object cond = uia.CreatePropertyCondition(AutomationIdProperty, id);
+            object cond = Get().CreatePropertyCondition(AutomationIdProperty, id);
             IUIAutomationElement el = root.FindFirst(TreeScopeDescendants, cond);
             Marshal.ReleaseComObject(root);
             if (cond != null) Marshal.ReleaseComObject(cond);
@@ -370,6 +402,13 @@ namespace ButterflyCursor
         readonly object perchLock = new object();
         Dictionary<string, Rectangle> startRects = new Dictionary<string, Rectangle>();
         int lookupBusy;
+
+        // the text field being typed in (screen pixels; empty when none) and which side of it the creature keeps to
+        Rectangle inputRect;
+        int inputBusy, avoidSide = -1;
+        double lastInputLookup;
+        bool? captureHidden;
+        readonly int myPid = System.Diagnostics.Process.GetCurrentProcess().Id;
 
         public Overlay()
         {
@@ -681,6 +720,89 @@ namespace ButterflyCursor
             });
         }
 
+        /// <summary>
+        /// Finds the text field the user types in, a few times a second on a helper thread: the focused edit box
+        /// through UI Automation (Chrome, Edge and Electron programs report it too, from the second ask on);
+        /// for big documents, a band around the text caret.
+        /// </summary>
+        void RefreshInput(double now)
+        {
+            if (now - lastInputLookup < 0.3) return;
+            if (Interlocked.Exchange(ref inputBusy, 1) == 1) return;
+            lastInputLookup = now;
+            float k = dpi;
+            ThreadPool.QueueUserWorkItem(delegate
+            {
+                Rectangle found = Rectangle.Empty;
+                try
+                {
+                    IntPtr fg = Native.GetForegroundWindow();
+                    uint pid = 0;
+                    uint tid = fg == IntPtr.Zero ? 0 : Native.GetWindowThreadProcessId(fg, out pid);
+                    if (tid != 0 && pid != myPid)
+                    {
+                        Rectangle caret = Rectangle.Empty;
+                        var gi = new Native.GUITHREADINFO();
+                        gi.cbSize = Marshal.SizeOf(typeof(Native.GUITHREADINFO));
+                        if (Native.GetGUIThreadInfo(tid, ref gi) && gi.hwndCaret != IntPtr.Zero)
+                        {
+                            Native.RECT r = gi.caret;
+                            Native.MapWindowPoints(gi.hwndCaret, IntPtr.Zero, ref r, 2);
+                            if (r.B > r.T) caret = Rectangle.FromLTRB(r.L, r.T, Math.Max(r.R, r.L + 1), r.B);
+                        }
+                        Rectangle field;
+                        Uia.FocusedTextField(out field);
+                        Rectangle wa = Screen.FromHandle(fg).WorkingArea;
+                        bool small = !field.IsEmpty && (long)field.Width * field.Height < (long)wa.Width * wa.Height / 4;
+                        if (small) found = field;
+                        else if (!caret.IsEmpty)
+                        {
+                            // a big document or no field reported: keep clear of the line being typed
+                            int w = (int)(260 * k), h = (int)(10 * k);
+                            found = new Rectangle(caret.X - w, caret.Y - h, 2 * w, caret.Height + 2 * h);
+                            if (!field.IsEmpty) found.Intersect(Rectangle.Inflate(field, 0, h));
+                        }
+                    }
+                }
+                catch { }
+                inputRect = found;
+                Interlocked.Exchange(ref inputBusy, 0);
+            });
+        }
+
+        /// <summary>Moves a target that falls on the text field to just outside it, keeping to one side.</summary>
+        void AvoidInput(ref float tx, ref float ty)
+        {
+            Rectangle f = inputRect;
+            if (f.IsEmpty) { avoidSide = -1; return; }
+            float m = S * 0.5f + 6 * dpi;
+            RectangleF r = RectangleF.FromLTRB(f.Left - m, f.Top - m, f.Right + m, f.Bottom + m);
+            if (!r.Contains(tx, ty)) { avoidSide = -1; return; }
+            Rectangle wa = Screen.FromPoint(new Point((int)tx, (int)ty)).WorkingArea;
+            float h = S * 0.5f;
+            // 0 above, 1 below, 2 left, 3 right: stays on the side chosen first so it never flies across the field
+            bool[] fits = { r.Top - h >= wa.Top, r.Bottom + h <= wa.Bottom, r.Left - h >= wa.Left, r.Right + h <= wa.Right };
+            if (avoidSide < 0 || !fits[avoidSide])
+            {
+                float[] d = { ty - r.Top, r.Bottom - ty, tx - r.Left, r.Right - tx };
+                avoidSide = -1;
+                for (int i = 0; i < 4; i++)
+                    if (fits[i] && (avoidSide < 0 || d[i] < d[avoidSide])) avoidSide = i;
+                if (avoidSide < 0) return;
+            }
+            if (avoidSide == 0) ty = r.Top; else if (avoidSide == 1) ty = r.Bottom;
+            else if (avoidSide == 2) tx = r.Left; else tx = r.Right;
+        }
+
+        /// <summary>Keeps the window out of screenshots, the Snipping Tool and screen recording (not in the demo mode).</summary>
+        void UpdateCaptureVisibility()
+        {
+            bool hide = Cfg.HideCapture && !Demo;
+            if (captureHidden == hide) return;
+            captureHidden = hide;
+            Native.SetWindowDisplayAffinity(Handle, hide ? Native.WDA_EXCLUDEFROMCAPTURE : Native.WDA_NONE);
+        }
+
         /// <summary>Resting place: by the Start button of the monitor the mouse pointer is on.</summary>
         PointF Perch(out float wantScale)
         {
@@ -695,17 +817,21 @@ namespace ButterflyCursor
 
             wantScale = 1f;
             float size = S;
-            if (dozing)
+            // asleep: shrinks to the size of the Start icon; resting small: fills the taskbar height beside Start,
+            // so it never sits over the windows (the text being typed at the bottom of the screen)
+            bool small = dozing || Cfg.RestSmall;
+            if (small)
             {
-                // asleep: shrinks to the size of the Start icon
-                size = found ? Math.Min(s.Width, s.Height) * 0.8f : 32f * dpi;
+                float bar = found ? Math.Min(s.Width, s.Height) : 40f * dpi;
+                size = dozing ? bar * 0.8f : bar * 0.95f;
                 wantScale = Math.Min(1f, size / S);
             }
 
             PointF p;
             if (!found)
-                p = new PointF(wa.Left + wa.Width / 2f, wa.Bottom - size * 0.5f);
-            else if (dozing)
+                p = small && wa.Bottom < b.Bottom ? new PointF(wa.Left + wa.Width / 2f - size * 1.5f, (wa.Bottom + b.Bottom) / 2f)
+                                                  : new PointF(wa.Left + wa.Width / 2f, wa.Bottom - size * 0.5f);
+            else if (small)
             {
                 // right next to the icon itself (about 0.4 of the taskbar thickness, in the middle of the button);
                 // on the left side if there is room, otherwise on the right (Windows 10: Start in the corner)
@@ -714,9 +840,9 @@ namespace ButterflyCursor
                     p = new PointF(cx, cy + s.Width * 0.2f + size * 0.42f);
                 else
                 {
-                    float icon = s.Height * 0.2f;
-                    p = new PointF(cx - icon - size * 0.42f, cy);
-                    if (p.X - size / 2 < b.Left) p = new PointF(cx + icon + size * 0.42f, cy);
+                    float icon = s.Height * 0.2f, gap = dozing ? size * 0.42f : size * 0.5f;
+                    p = new PointF(cx - icon - gap, cy);
+                    if (p.X - size / 2 < b.Left) p = new PointF(cx + icon + gap, cy);
                 }
             }
             else if (sitSprite != null)
@@ -878,7 +1004,7 @@ namespace ButterflyCursor
         float SnakeLen() { return S * scale * 2.6f; }
         float SnakeW() { return S * scale * 0.15f; }
         /// <summary>Radius of the coil it rests in (the body wound up around the head).</summary>
-        float SnakeCoilR() { float w = S * 0.15f; return (float)Math.Sqrt(S * 2.6f * w * 1.1f / Math.PI) + w; }
+        float SnakeCoilR() { float w = SnakeW(); return (float)Math.Sqrt(SnakeLen() * w * 1.1f / Math.PI) + w; }
 
         static float Wrap(float a)
         {
@@ -1252,6 +1378,8 @@ namespace ButterflyCursor
             // the centred Windows 11 taskbar moves Start whenever programs open or close: look again every few
             // seconds while resting there (a quick lookup on a helper thread), rarely while following the mouse
             RefreshStartRects(now, idle ? (wasIdle ? 4 : 0.5) : 60);
+            if (!idle && Cfg.AvoidInput) RefreshInput(now);
+            UpdateCaptureVisibility();
             wasIdle = idle;
 
             // speed setting 1..10; crawlers are slower than fliers, the snail is much slower
@@ -1306,6 +1434,7 @@ namespace ButterflyCursor
                 float h = S * 0.5f;
                 tx = Math.Max(wa.Left + h, Math.Min(wa.Right - h, tx));
                 ty = Math.Max(wa.Top + h, Math.Min(wa.Bottom - h, ty));
+                if (Cfg.AvoidInput) AvoidInput(ref tx, ref ty);
                 resting = false;
             }
             scale += (wantScale - scale) * Math.Min(1f, dt * 3f);

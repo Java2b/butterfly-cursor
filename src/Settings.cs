@@ -154,6 +154,10 @@ namespace ButterflyCursor
         public static string CreatureId, Lang = "", FlagCode;
         public static int Size, Speed, IdleSec, DustAmount, DustSize, DustLife, DustBright, Aura, AuraRgb;
         public static bool GoHome, Dust, HideFullscreen, Rainbow, ClickFx, Seasons, Music, NightGlow, DarkTheme, CheckUpdates;
+        /// <summary>Keep off the text field being typed in; stay out of screenshots and screen recordings.</summary>
+        public static bool AvoidInput, HideCapture;
+        /// <summary>Rest small inside the taskbar, beside Start, instead of sitting on top of it over the windows.</summary>
+        public static bool RestSmall;
         /// <summary>Dust colours chosen by the user (0xRRGGBB); ignored while Rainbow is on.</summary>
         public static List<int> Colors = new List<int>();
         public const int MaxColors = 12;
@@ -200,6 +204,7 @@ namespace ButterflyCursor
         {
             Size = 76; Speed = 5; IdleSec = 4; GoHome = true; HideFullscreen = true;
             ClickFx = false; Seasons = true; Music = false; NightGlow = false; CheckUpdates = true;
+            AvoidInput = true; HideCapture = true; RestSmall = true;
             Dust = true; DustAmount = 50; DustSize = 50; DustLife = 50; DustBright = 100;
             Colors = Preset(0); Rainbow = false; Aura = 0; AuraRgb = 0x78DCFF;
         }
@@ -234,6 +239,9 @@ namespace ButterflyCursor
                     Music = Int(k, "Music", 0, 0, 1) == 1;
                     NightGlow = Int(k, "NightGlow", 0, 0, 1) == 1;
                     CheckUpdates = Int(k, "CheckUpdates", 1, 0, 1) == 1;
+                    AvoidInput = Int(k, "AvoidInput", 1, 0, 1) == 1;
+                    HideCapture = Int(k, "HideCapture", 1, 0, 1) == 1;
+                    RestSmall = Int(k, "RestSmall", 1, 0, 1) == 1;
                     if (k.GetValue("DarkTheme") != null) DarkTheme = Int(k, "DarkTheme", 0, 0, 1) == 1;
                     DustAmount = Int(k, "DustAmount", DustAmount, 0, 100);
                     DustSize = Int(k, "DustSize", DustSize, 0, 100);
@@ -292,6 +300,8 @@ namespace ButterflyCursor
                     k.SetValue("Music", Music ? 1 : 0); k.SetValue("NightGlow", NightGlow ? 1 : 0);
                     k.SetValue("DarkTheme", DarkTheme ? 1 : 0);
                     k.SetValue("CheckUpdates", CheckUpdates ? 1 : 0);
+                    k.SetValue("AvoidInput", AvoidInput ? 1 : 0); k.SetValue("HideCapture", HideCapture ? 1 : 0);
+                    k.SetValue("RestSmall", RestSmall ? 1 : 0);
                     k.SetValue("DustAmount", DustAmount); k.SetValue("DustSize", DustSize);
                     k.SetValue("DustLife", DustLife); k.SetValue("DustBright", DustBright);
                     k.SetValue("Aura", Aura); k.SetValue("AuraRgb", AuraRgb); k.SetValue("Rainbow", Rainbow ? 1 : 0);
